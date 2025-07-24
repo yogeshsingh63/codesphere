@@ -1,0 +1,2 @@
+# Ignore node_modules directory at the project root
+/node_modules/ 
