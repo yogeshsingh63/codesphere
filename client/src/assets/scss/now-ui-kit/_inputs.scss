@@ -1,4 +1,9 @@
-@include form-control-placeholder($default-color, .8);
+@import "variables";
+@import "mixins";
+
+.form-control {
+  @include form-control-placeholder($default-color, .8);
+}
 
 .form-control {
     background-color: $transparent-bg;

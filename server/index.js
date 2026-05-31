@@ -91,17 +91,18 @@ app.use(express.urlencoded({ extended: false, limit: "128mb" }));
 app.use(express.json({ limit: "128mb" }));
 app.use(requestSanitizer);
 
-app.use(
-  cors({
-    origin: process.env.ORIGIN,
-  })
-);
-app.options(
-  "*",
-  cors({
-    origin: process.env.ORIGIN,
-  })
-);
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (origin.startsWith("http://localhost:")) {
+      return callback(null, true);
+    }
+    return callback(null, process.env.ORIGIN);
+  },
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use("/user/login", authLimiter);
 app.use("/user/register", authLimiter);

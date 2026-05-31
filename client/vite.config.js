@@ -39,6 +39,14 @@ export default defineConfig(({ mode }) => {
         loader: { ".js": "jsx" },
       },
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: "legacy",
+          silenceDeprecations: ["import", "color-functions", "slash-div"],
+        },
+      },
+    },
     server: {
       port: Number.parseInt(env.PORT || "7000", 10),
     },
