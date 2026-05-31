@@ -1,5 +1,5 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Switch } from "react-router-dom";
 
 import { AuthProvider } from "context/auth.js";
@@ -7,8 +7,8 @@ import { AlertProvider } from "context/alert.js";
 
 import "assets/css/bootstrap.min.css";
 import "assets/scss/styles.scss";
-import "assets/scss/now-ui-kit.scss?v=1.4.0";
-import "assets/demo/demo.css?v=1.4.0";
+import "assets/scss/now-ui-kit.scss";
+import "assets/demo/demo.css";
 
 import "../node_modules/highlight.js/styles/monokai-sublime.css";
 
@@ -24,7 +24,9 @@ import CreatePage from "views/rooms/CreatePage.js";
 import ViewPage from "views/rooms/ViewPage.js";
 import ListPage from "views/rooms/ListPage.js";
 
-ReactDOM.render(
+const root = createRoot(document.getElementById("root"));
+
+root.render(
   <AuthProvider>
     <BrowserRouter>
       <AlertProvider>
@@ -65,5 +67,4 @@ ReactDOM.render(
       </AlertProvider>
     </BrowserRouter>
   </AuthProvider>,
-  document.getElementById("root")
 );

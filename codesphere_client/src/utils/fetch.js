@@ -1,6 +1,6 @@
 import Cookies from 'universal-cookie';
 
-export default function(url, options = {}) {
+export default function fetchWithAuth(url, options = {}) {
 	const cookies = new Cookies();
 
 	if(!options.headers) {

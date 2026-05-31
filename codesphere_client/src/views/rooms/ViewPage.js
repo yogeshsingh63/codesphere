@@ -29,7 +29,7 @@ function ViewPage() {
   const { setMessageOptions, setErrorOptions } = useAlertState();
   const { code } = useParams();
   const history = useHistory();
-  const { width, height } = useWindowSize();
+  useWindowSize();
 
   const navbarRef = React.createRef();
   const iframeRef = React.createRef();

@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import validator from "validator";
 
 import check from "./check.js";
@@ -24,7 +24,7 @@ function safeSend(ws, data) {
 
 const configure = (wss) => {
   wss.on("connection", (ws, request) => {
-    const id = uuidv4();
+    const id = randomUUID();
     const user = request.user;
     let room = null;
     let runInFlight = false;
@@ -204,7 +204,7 @@ const configure = (wss) => {
 
       if (data.type === "collab") {
         if (data.meta === "create") {
-          const code = uuidv4();
+          const code = randomUUID();
           collabRooms[code] = {};
           collabRooms[code][id] = ws;
           room = code;

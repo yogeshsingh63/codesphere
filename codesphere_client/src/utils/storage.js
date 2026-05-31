@@ -86,6 +86,6 @@ const remove = (key) => {
 
 	return codesphere;
 }
+const storage = { get, set, save, load, remove };
 
-
-export default { get, set, save, load, remove }
+export default storage;
