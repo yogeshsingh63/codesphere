@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
-import WebSocket from "ws";
+import { WebSocketServer } from "ws";
 
 import sockets from "./src/sockets.js";
 import authenticate from "./src/authenticate.js";
@@ -23,7 +23,7 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ noServer: true });
+const wss = new WebSocketServer({ noServer: true });
 
 sockets.configure(wss);
 
