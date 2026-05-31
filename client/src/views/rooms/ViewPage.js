@@ -1,4 +1,5 @@
 import React from "react";
+import asset from "utils/asset.js";
 import { useParams, useHistory } from "react-router-dom";
 // import Confetti from 'react-confetti';
 // reactstrap components
@@ -215,7 +216,7 @@ function ViewPage() {
                       ></img>
                     ) : (
                       <img
-                        src={require("assets/img/logo.png")}
+                        src={asset("assets/img/logo.png")}
                         alt="codesphere logo"
                         className="c-info-img c-hide-on-small"
                       ></img>

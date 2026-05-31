@@ -1,4 +1,5 @@
 import React from "react";
+import asset from "utils/asset.js";
 
 import { Container, Row, Col, Button } from "reactstrap";
 import { Link } from "react-router-dom"; 
@@ -41,7 +42,7 @@ function Index() {
                   <div className="icons-container">
                     <img
                       alt="..."
-                      src={require("assets/img/code-collab.svg")}
+                      src={asset("assets/img/code-collab.svg")}
                     />
                   </div>
                 </Col>
@@ -51,7 +52,7 @@ function Index() {
                   <div className="icons-container">
                     <img
                       alt="..."
-                      src={require("assets/img/code-version-control.svg")}
+                      src={asset("assets/img/code-version-control.svg")}
                     />
                   </div>
                 </Col>
@@ -101,7 +102,7 @@ function Index() {
           className="section section-signup"
           id="signup"
           style={{
-            backgroundImage: "url(" + require("assets/img/bg11.jpg") + ")",
+            backgroundImage: "url(" + asset("assets/img/bg11.jpg") + ")",
             backgroundSize: "cover",
             backgroundPosition: "top center",
             minHeight: "700px",

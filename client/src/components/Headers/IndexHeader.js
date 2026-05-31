@@ -1,5 +1,6 @@
 /*eslint-disable*/
 import React from "react";
+import asset from "utils/asset.js";
 
 // reactstrap components
 import { Container } from "reactstrap";
@@ -28,7 +29,7 @@ function IndexHeader() {
         <div
           className="page-header-image"
           style={{
-            backgroundImage: "url(" + require("assets/img/header.jpg") + ")",
+            backgroundImage: "url(" + asset("assets/img/header.jpg") + ")",
           }}
           ref={pageHeader}
         ></div>
@@ -37,7 +38,7 @@ function IndexHeader() {
             <img
               alt="..."
               className="n-logo"
-              src={require("assets/img/logo.png")}
+              src={asset("assets/img/logo.png")}
             ></img>
             <h1 className="h1-seo">CodeSphere</h1>
             <h3>An open-source, collaborative, and free learning & coding environment for all.</h3>

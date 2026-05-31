@@ -1,4 +1,5 @@
 import React from "react";
+import asset from "utils/asset.js";
 
 // reactstrap components
 import { Container } from "reactstrap";
@@ -70,7 +71,7 @@ function ProfilePageHeader() {
         <div
           className="page-header-image"
           style={{
-            backgroundImage: "url(" + require("assets/img/bg5.jpg") + ")",
+            backgroundImage: "url(" + asset("assets/img/bg5.jpg") + ")",
           }}
           ref={pageHeader}
         ></div>

@@ -1,4 +1,5 @@
 import React from "react";
+import asset from "utils/asset.js";
 // reactstrap components
 import { 
   Input,
@@ -219,23 +220,23 @@ function EditSection({open, isOpen, submit, section}){
               <div className="d-flex">
                 <div>
                   <Button className="p-2" color={layout === 0 ? "info" : "secondary"} onClick={() => setLayout(0)}>
-                    <img alt="50 / 50" src={require("assets/img/section/layout0.png")} style={{"height": "4rem"}} />
+                    <img alt="50 / 50" src={asset("assets/img/section/layout0.png")} style={{"height": "4rem"}} />
                   </Button>
                 </div>
                 <div className="ml-3">
                   <Button className="p-2" color={layout === 1 ? "info" : "secondary"} onClick={() => setLayout(1)}>
-                    <img alt="25 / 75" src={require("assets/img/section/layout1.png")} style={{"height": "4rem"}} />
+                    <img alt="25 / 75" src={asset("assets/img/section/layout1.png")} style={{"height": "4rem"}} />
                   </Button>
                 </div>
                 <div className="ml-3">
                   <Button className="p-2" color={layout === 2 ? "info" : "secondary"} onClick={() => setLayout(2)}>
-                    <img alt="75 / 25" src={require("assets/img/section/layout2.png")} style={{"height": "4rem"}} />
+                    <img alt="75 / 25" src={asset("assets/img/section/layout2.png")} style={{"height": "4rem"}} />
                   </Button>
                 </div>
                 {type === "info" && (
                   <div className="ml-3">
                     <Button className="p-2" color={layout === 3 ? "info" : "secondary"} onClick={() => setLayout(3)}>
-                      <img alt="75 / 25" src={require("assets/img/section/layout3.png")} style={{"height": "4rem"}} />
+                      <img alt="75 / 25" src={asset("assets/img/section/layout3.png")} style={{"height": "4rem"}} />
                     </Button>
                   </div>
                 )}

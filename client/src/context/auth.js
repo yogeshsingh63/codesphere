@@ -49,6 +49,11 @@ function AuthProvider({children}) {
           isSignedIn: false
         }});
       }
+    })
+    .catch(() => {
+      setState({status: 'error', error: 'Network error', data: {
+        isSignedIn: false
+      }});
     });
   }, []);
 

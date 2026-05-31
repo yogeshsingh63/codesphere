@@ -1,4 +1,5 @@
 import React from "react";
+import asset from "utils/asset.js";
 import { useHistory } from "react-router-dom";
 // reactstrap components
 import {
@@ -42,7 +43,7 @@ function RegisterPage() {
         <div
           className="page-header-image"
           style={{
-            backgroundImage: "url(" + require("assets/img/login.jpg") + ")",
+            backgroundImage: "url(" + asset("assets/img/login.jpg") + ")",
           }}
         ></div>
         <div className="content">
