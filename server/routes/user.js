@@ -115,7 +115,7 @@ router.post(
       );
     }
 
-    const user = req.user;
+    const user = await User.findById(req.user._id).select("+password").exec();
     const matches = await bcrypt.compare(currentPassword, user.password);
     if (!matches) {
       return res.json(response.failure("Incorrect password."));

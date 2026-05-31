@@ -34,6 +34,11 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: "build",
     },
+    optimizeDeps: {
+      esbuildOptions: {
+        loader: { ".js": "jsx" },
+      },
+    },
     server: {
       port: Number.parseInt(env.PORT || "7000", 10),
     },
