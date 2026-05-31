@@ -38,8 +38,9 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
       ws.send(JSON.stringify(payload));
     }
   }, [ws]);
+  const wsRef = React.useRef(null);
   const connectWS = React.useCallback(() => {
-    if(ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.readyState)) {
+    if(wsRef.current && [WebSocket.OPEN, WebSocket.CONNECTING].includes(wsRef.current.readyState)) {
       return;
     }
 
@@ -53,23 +54,23 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
     );
 
     socket.onopen = () => {
-      if(status === "disconnected")
-        setStatus("connected");
+      setStatus(prev => prev === "disconnected" ? "connected" : prev);
     }
     socket.onclose = () => {
       setStatus("disconnected");
     }
+    
+    wsRef.current = socket;
     setWS(socket);
 
     return () => {
       socket.close();
     };
-  }, [ws, status, token]);
+  }, [token]);
 
   React.useEffect(() => {
     return connectWS();
   }, [connectWS]);
-
   const [active, setActive] = React.useState({
     files: [],
     folder: "/",
