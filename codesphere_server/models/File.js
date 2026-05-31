@@ -25,6 +25,10 @@ const fileSchema = Schema({
         type: Number,
         required: true
     }
+}, {
+    timestamps: true
 });
+
+fileSchema.index({ code: 1 }, { unique: true });
 
 export default mongoose.model('File', fileSchema);

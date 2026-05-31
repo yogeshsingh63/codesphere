@@ -6,174 +6,284 @@ import sandbox from "./sandbox.js";
 import response from "./response.js";
 
 const trimmer = /^\s+|\s+$/g;
-const compare = (input1, input2) => {
-	return input1 === input2 || input1.replace(trimmer, "") === input2.replace(trimmer, "");
-}
+
+const compare = (input1 = "", input2 = "") => {
+  return (
+    input1 === input2 ||
+    input1.replace(trimmer, "") === input2.replace(trimmer, "")
+  );
+};
 
 const regexCompare = (regex, input, multiline = true, fail = false) => {
-	let r = new RE2(regex);
-	r.multiline = multiline;
-	return (r.test(input) === !fail);
-}
+  const matcher = new RE2(regex);
+  matcher.multiline = multiline;
+  return matcher.test(input) === !fail;
+};
 
 const complete = async (user, room, section) => {
-	let index = user.completed.findIndex(entry => entry.room.code === room.code);
-	if(index === -1) {
-		index = user.completed.push({ room: room._id, sections: [] }) - 1;
-	}
-	if(!user.completed[index].sections.find(s => s.code === section.code)) {
-		user.completed[index].sections.push(section._id);
-		await user.save();
-	}
-}
+  let index = user.completed.findIndex((entry) => entry.room.code === room.code);
+  if (index === -1) {
+    index = user.completed.push({ room: room._id, sections: [] }) - 1;
+  }
 
-const coding = (emit, user, room, section, lang, files) => {
-	let checks = section.coding.checks;
+  if (!user.completed[index].sections.find((item) => item.code === section.code)) {
+    user.completed[index].sections.push(section._id);
+    await user.save();
+  }
+};
 
-	let testCases = checks.filter(c => c.stdin || c.stdout);
-	let codeChecks = checks.filter(c => c.code || c.output);
+const coding = async (emit, user, room, section, lang, files) => {
+  const checks = section.coding.checks;
 
-	let stdins = testCases.map(c => c.stdin);
-	if(stdins.length === 0)
-		stdins = [""];
+  const testCases = checks.filter((item) => item.stdin || item.stdout);
+  const codeChecks = checks.filter((item) => item.code || item.output);
 
-	let num = 0;
-	let passed = true;
-	let failed = 0;
+  let stdins = testCases.map((item) => item.stdin);
+  if (stdins.length === 0) {
+    stdins = [""];
+  }
 
-	sandbox.runLang(lang, files, stdins, async (result) => {
-		if(result.type !== "run")
-			return;
+  let passed = true;
+  let failed = 0;
+  let lastOutput = "";
+  let compileFailed = false;
+  let finalized = false;
 
-		if(testCases[num]) {
-			if(compare(result.stdout, testCases[num].stdout)) {
-				emit({type: "stdout", msg: `[Task] Passed test case ${num + 1} / ${checks.length}.\n`});
-			}
-			else {
-				passed = false;
-				failed++;
-				emit({type: "stderr", msg: `[Task] Failed test case ${num + 1} / ${checks.length}.\n`});
-				if(testCases[num].hint)
-					emit({type: "stderr", msg: `[Task]\t\t${testCases[num].hint}\n`});
-			}
+  const failAndStop = (message) => {
+    finalized = true;
+    passed = false;
+    emit({ type: "stderr", msg: message });
+  };
 
-			num++;
-		}
+  await sandbox.runLang(lang, files, stdins, async (result) => {
+    if (finalized) {
+      return;
+    }
 
-		if(num === testCases.length) {
-			let code = files[0].files[0].content;
-			for(let i = 0; i < codeChecks.length; i++) {
-				let check = codeChecks[i];
-				let okay = true;
+    if (result.type === "compile") {
+      if (result.exit_code !== 0 || result.stderr) {
+        compileFailed = true;
+        failAndStop("There was an error compiling your code.\n\n");
+        if (result.stderr) {
+          emit({ type: "stderr", msg: result.stderr });
+        }
+      }
+      return;
+    }
 
-				if(check.code) {
-					if(!regexCompare(check.code, code || "", check.multiline, check.fail))
-						okay = false;
-				}
-				if(check.output) {
-					if(!regexCompare(check.output, result.stdout || "", check.multiline, check.fail))
-						okay = false;
-				}
+    const index =
+      typeof result.stdinIndex === "number" ? result.stdinIndex : 0;
+    const testCase = testCases[index];
+    lastOutput = result.stdout || "";
 
-				if(!okay) {
-					passed = false;
-					failed++;
-					emit({type: "stderr", msg: `[Task] Failed check ${num + i + 1} / ${checks.length}.\n`});
-					if(check.hint)
-						emit({type: "stderr", msg: `[Task]\t\t${check.hint}\n`});
-				}
-				else {
-					emit({type: "stdout", msg: `[Task] Passed check ${num + i + 1} / ${checks.length}.\n`});
-				}
-			}
+    if (testCase) {
+      if (
+        result.exit_code === 0 &&
+        !result.stderr &&
+        compare(result.stdout, testCase.stdout)
+      ) {
+        emit({
+          type: "stdout",
+          msg: `[Task] Passed test case ${index + 1} / ${checks.length}.\n`,
+        });
+      } else {
+        passed = false;
+        failed += 1;
+        emit({
+          type: "stderr",
+          msg: `[Task] Failed test case ${index + 1} / ${checks.length}.\n`,
+        });
+        if (testCase.hint) {
+          emit({ type: "stderr", msg: `[Task]\t\t${testCase.hint}\n` });
+        }
+        if (result.stderr) {
+          emit({ type: "stderr", msg: result.stderr });
+        }
+      }
+    }
 
-			if(passed) {
-				emit({type: "stdout", msg: "\nNice job! You passed all of the checks."});
-				emit({type: "completed"});
-				await complete(user, room, section);
-			}
-			else {
-				emit({type: "stderr", msg: `\n${section.title} failed.\n${failed} / ${checks.length} checks failed.`});
-			}
-		}
-	});
-}
+    if (result.timeout || result.oom_killed) {
+      finalized = true;
+      passed = false;
+      emit({
+        type: "stderr",
+        msg: `\n${section.title} failed.\nExecution stopped before all checks completed.`,
+      });
+      return;
+    }
 
-const verify = async ({ emit, res, user, room, section, token, lang, files, answer, answers, flag }) => {
-	let find;
-	if(user.enrolled.find(check => check.code === room)) {
-		find = user.enrolled.find(check => check.code === room);
-	}
-	if(user.created.find(check => check.code === room)) {
-		find = user.created.find(check => check.code === room);
-	}
+    const completedRunCount = index + 1;
+    if (completedRunCount !== testCases.length) {
+      return;
+    }
 
-	let error = (msg) => {
-		if(emit) 
-			return emit({type: "stderr", msg});
-		else
-			return res.json(response.failure(msg));
-	}
-	let success = (msg) => {
-		if(emit) 
-			return emit({type: "stdout", msg});
-		else
-			return res.json(response.success(msg));
-	}
+    for (let checkIndex = 0; checkIndex < codeChecks.length; checkIndex += 1) {
+      const codeCheck = codeChecks[checkIndex];
+      let okay = true;
+      const code = files?.[0]?.files?.[0]?.content || "";
 
-	if(!find) {
-		return error("You are not in that room.");
-	}
+      if (codeCheck.code) {
+        if (
+          !regexCompare(codeCheck.code, code, codeCheck.multiline, codeCheck.fail)
+        ) {
+          okay = false;
+        }
+      }
 
-	Room.findOne({ code: find.code }).populate("sections").exec(async (err, room) => {
-		if(!room.sections.find(find => find.code === section)) {
-			return error("That section does not exist.");
-		}
-		section = room.sections.find(find => find.code === section);
+      if (codeCheck.output) {
+        if (
+          !regexCompare(
+            codeCheck.output,
+            lastOutput,
+            codeCheck.multiline,
+            codeCheck.fail
+          )
+        ) {
+          okay = false;
+        }
+      }
 
-		if(section.type === "coding" && section.coding.checks.length > 0) {
-			if(!lang || typeof lang !== 'string') {
-				return error("Missing lang.");
-			}
-			if(!files || typeof files !== 'object') {
-				return error("Missing files.");
-			}
-			return coding(emit, user, room, section, lang, files);
-		}
-		else if(section.type === "info"
-            || (section.type === "coding" && section.coding.checks.length === 0)
-            || section.type === "website") {
-			await complete(user, room, section);
-			return success("Section completed!");
-		}
-		else if(section.type === "quiz") {
-            let correct = section.quiz.answers.filter(a => a.correct).map(a => a.choice);
-			if(section.quiz.all) {
-                if(JSON.stringify(correct.sort()) === JSON.stringify(answers.sort())) {
-                    await complete(user, room, section);
-                    return success("Section completed!");
-                }
-            }
-            else {
-                if((correct.length === 0 && !answer) 
-                    || correct.includes(answer) ) {
-                    await complete(user, room, section);
-                    return success("Section completed!");
-                }
-            }
-			return error("Incorrect answer!");
-		}
-		else if(section.type === "flag") {
-			if(section.flag === flag) {
-				await complete(user, room, section);
-				return success("Section completed!");
-			}
-			return error("Incorrect answer!");
-		}
-		else {
-			return error("Section type not implemented!");
-		}
-	});
-}
+      if (!okay) {
+        passed = false;
+        failed += 1;
+        emit({
+          type: "stderr",
+          msg: `[Task] Failed check ${completedRunCount + checkIndex + 1} / ${checks.length}.\n`,
+        });
+        if (codeCheck.hint) {
+          emit({ type: "stderr", msg: `[Task]\t\t${codeCheck.hint}\n` });
+        }
+      } else {
+        emit({
+          type: "stdout",
+          msg: `[Task] Passed check ${completedRunCount + checkIndex + 1} / ${checks.length}.\n`,
+        });
+      }
+    }
 
-export default { verify }
+    finalized = true;
+    if (passed) {
+      emit({ type: "stdout", msg: "\nNice job! You passed all of the checks." });
+      emit({ type: "completed" });
+      await complete(user, room, section);
+      return;
+    }
+
+    emit({
+      type: "stderr",
+      msg: `\n${section.title} failed.\n${failed} / ${checks.length} checks failed.`,
+    });
+  });
+
+  if (!finalized && compileFailed) {
+    return;
+  }
+};
+
+const verify = async ({
+  emit,
+  res,
+  user,
+  room,
+  section,
+  lang,
+  files,
+  answer,
+  answers,
+  flag,
+}) => {
+  let find;
+  if (user.enrolled.find((entry) => entry.code === room)) {
+    find = user.enrolled.find((entry) => entry.code === room);
+  }
+  if (user.created.find((entry) => entry.code === room)) {
+    find = user.created.find((entry) => entry.code === room);
+  }
+
+  const error = (message) => {
+    if (emit) {
+      return emit({ type: "stderr", msg: message });
+    }
+
+    return res.json(response.failure(message));
+  };
+
+  const success = (message) => {
+    if (emit) {
+      return emit({ type: "stdout", msg: message });
+    }
+
+    return res.json(response.success(message));
+  };
+
+  if (!find) {
+    return error("You are not in that room.");
+  }
+
+  const fullRoom = await Room.findOne({ code: find.code }).populate("sections").exec();
+  if (!fullRoom) {
+    return error("Unable to find room.");
+  }
+
+  if (!fullRoom.sections.find((entry) => entry.code === section)) {
+    return error("That section does not exist.");
+  }
+
+  const targetSection = fullRoom.sections.find((entry) => entry.code === section);
+
+  if (targetSection.type === "coding" && targetSection.coding.checks.length > 0) {
+    if (!emit) {
+      return error("Coding verification requires a WebSocket connection.");
+    }
+    if (!lang || typeof lang !== "string") {
+      return error("Missing lang.");
+    }
+    if (!files || typeof files !== "object") {
+      return error("Missing files.");
+    }
+
+    return coding(emit, user, fullRoom, targetSection, lang, files);
+  }
+
+  if (
+    targetSection.type === "info" ||
+    (targetSection.type === "coding" && targetSection.coding.checks.length === 0) ||
+    targetSection.type === "website"
+  ) {
+    await complete(user, fullRoom, targetSection);
+    return success("Section completed!");
+  }
+
+  if (targetSection.type === "quiz") {
+    const correct = targetSection.quiz.answers
+      .filter((item) => item.correct)
+      .map((item) => item.choice);
+
+    if (targetSection.quiz.all) {
+      if (
+        Array.isArray(answers) &&
+        JSON.stringify(correct.sort()) === JSON.stringify([...answers].sort())
+      ) {
+        await complete(user, fullRoom, targetSection);
+        return success("Section completed!");
+      }
+    } else if ((correct.length === 0 && !answer) || correct.includes(answer)) {
+      await complete(user, fullRoom, targetSection);
+      return success("Section completed!");
+    }
+
+    return error("Incorrect answer!");
+  }
+
+  if (targetSection.type === "flag") {
+    if (targetSection.flag === flag) {
+      await complete(user, fullRoom, targetSection);
+      return success("Section completed!");
+    }
+    return error("Incorrect answer!");
+  }
+
+  return error("Section type not implemented!");
+};
+
+export default { verify };

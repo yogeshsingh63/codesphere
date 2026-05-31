@@ -1,7 +1,7 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from "crypto";
 import express from "express";
-import Ajv from 'ajv'
-import fs from "fs";
+import Ajv from "ajv";
+import validator from "validator";
 
 import Section from "../models/Section.js";
 import Room from "../models/Room.js";
@@ -10,396 +10,541 @@ import User from "../models/User.js";
 import authenticate from "../src/authenticate.js";
 import response from "../src/response.js";
 import check from "../src/check.js";
+import { asyncHandler } from "../src/http.js";
 
 const router = express.Router();
 
-const ajv = new Ajv.default({
+const ajv = new Ajv({
   allErrors: true,
 });
 
 const SECTION_TYPES = ["info", "coding", "quiz", "flag", "website"];
 
 const FILE_SCHEMA = {
-    "additionalProperties": false,
-    "required": [ "filename", "code", "size" ],
-    "type": "object",
-    "properties": {
-        "filename": { "type": "string" },
-        "code": { "type": "string" },
-        "size": { "type": "number" }
-    }
+  additionalProperties: false,
+  required: ["filename", "code", "size"],
+  type: "object",
+  properties: {
+    filename: { type: "string" },
+    code: { type: "string" },
+    size: { type: "number" },
+  },
 };
 
 const STORAGE_SCHEMA = {
-    "type": "array",
-    "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": [ "folder", "files" ],
-        "properties": {
-            "folder": { "type": "string" },
-            "files": {
-                "type": "array",
-                "items": FILE_SCHEMA
-            }
-        }
-    }
+  type: "array",
+  items: {
+    type: "object",
+    additionalProperties: false,
+    required: ["folder", "files"],
+    properties: {
+      folder: { type: "string" },
+      files: {
+        type: "array",
+        items: FILE_SCHEMA,
+      },
+    },
+  },
 };
 
 const ROOM_SCHEMA = {
-    "type": "object",
-    "title": "Room",
-    "required": ["title", "desc"],
-    "properties": {
-        "title": { "type": "string", "minLength": 3, "maxLength": 30 },
-        "desc": { "type": "string", "minLength": 3, "maxLength": 280 },
-        // "code" property not allowed for rooms
-        "sections": {
-            "type": "array",
-            "items": {
-                "additionalProperties": false,
-                "required": [ "title", "type" ],
-                "type": "object",
-                "properties": {
-                    "title": { "type": "string", "minLength": 3, "maxLength": 30 },
-                    "type": { "enum": SECTION_TYPES },
-                    "layout": { "type": "number" },
-                    
-                    "code": { "type": "string" },
-                    "markdown": { "type": "string" },
-                    "lang": { "type": "string" },
-
-
-                    "info": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "image": FILE_SCHEMA
-                        }
-                    },
-
-                    "coding": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "properties": {
-                            "lang": { "type": "string" },
-                            "files": STORAGE_SCHEMA,
-                            "checks": {
-                                "type": "array",
-                                "items": {
-                                    "additionalProperties": false,
-                                    "type": "object",
-                                    "properties": {
-                                        // code fd checks
-                                        "stdin": { "type": "string" },
-                                        "stdout": { "type": "string" },
-                                        // code regex/style checks
-                                        "code": { "type": "string" },
-                                        "output": { "type": "string" },
-                                        "multiline": { "type": "boolean" },
-                                        "fail": { "type": "boolean" },
-                                        // hint on test case fail
-                                        "hint": { "type": "string" }
-                                    }
-                                }
-                            }
-                        }
-                    },
-
-                    "quiz": {
-                        "type": "object",
-                        "additionalProperties": false,
-                        "required": [ "question" ],
-                        "properties": {
-                            "question": { "type": "string" },
-                            "answers": { 
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "required": ["choice", "correct"],
-                                    "additionalProperties": false,
-                                    "properties": {
-                                        "choice": { "type": "string"},
-                                        "correct": { "type": "boolean"}
-                                    }
-                                }
-                            },
-                            // whether all answers that are correct are required
-                            "all": { "type": "boolean" },
-                        }
-                    },
-
-                    "flag": { "type": "string" },
-
-                    "website": {
-                        "type": "object",
-                        "required": ["url"],
-                        "additionalProperties": false,
-                        "properties": {
-                            "url": { 
-                                "type": "string",
-                                "pattern": "^https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$"
-                            },
-                            "autopass": { "type": "boolean" }
-                        }
-                    }
-                }
-            }
+  type: "object",
+  title: "Room",
+  required: ["title", "desc"],
+  properties: {
+    title: { type: "string", minLength: 3, maxLength: 30 },
+    desc: { type: "string", minLength: 3, maxLength: 280 },
+    sections: {
+      type: "array",
+      items: {
+        additionalProperties: false,
+        required: ["title", "type"],
+        type: "object",
+        properties: {
+          title: { type: "string", minLength: 3, maxLength: 30 },
+          type: { enum: SECTION_TYPES },
+          layout: { type: "number" },
+          code: { type: "string" },
+          markdown: { type: "string" },
+          lang: { type: "string" },
+          info: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              image: FILE_SCHEMA,
+            },
+          },
+          coding: {
+            type: "object",
+            additionalProperties: false,
+            properties: {
+              lang: { type: "string" },
+              files: STORAGE_SCHEMA,
+              checks: {
+                type: "array",
+                items: {
+                  additionalProperties: false,
+                  type: "object",
+                  properties: {
+                    stdin: { type: "string" },
+                    stdout: { type: "string" },
+                    code: { type: "string" },
+                    output: { type: "string" },
+                    multiline: { type: "boolean" },
+                    fail: { type: "boolean" },
+                    hint: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+          quiz: {
+            type: "object",
+            additionalProperties: false,
+            required: ["question"],
+            properties: {
+              question: { type: "string" },
+              answers: {
+                type: "array",
+                items: {
+                  type: "object",
+                  required: ["choice", "correct"],
+                  additionalProperties: false,
+                  properties: {
+                    choice: { type: "string" },
+                    correct: { type: "boolean" },
+                  },
+                },
+              },
+              all: { type: "boolean" },
+            },
+          },
+          flag: { type: "string" },
+          website: {
+            type: "object",
+            required: ["url"],
+            additionalProperties: false,
+            properties: {
+              url: {
+                type: "string",
+                pattern:
+                  "^https?:\\/\\/(www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b([-a-zA-Z0-9()@:%_\\+.~#?&//=]*)$",
+              },
+              autopass: { type: "boolean" },
+            },
+          },
         },
-        "public": { "type": "boolean" }
+      },
     },
-    "additionalProperties": false
+    public: { type: "boolean" },
+  },
+  additionalProperties: false,
 };
 
-router.get("/count", async (req, res) => {
-    let rooms = await Room.find({});
-    return res.json(response.success({
-        count: rooms.length
-    }));
-});
+function escapeRegex(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
-router.post("/create", authenticate.requiresLogin, async (req, res) => {
-    let roomData = req.body.roomData;
-    let result = ajv.validate(ROOM_SCHEMA, roomData);
+router.get(
+  "/count",
+  asyncHandler(async (req, res) => {
+    const count = await Room.countDocuments({});
+    return res.json(response.success({ count }));
+  })
+);
 
-    if(!result) {
-        return res.json(response.failure("There was an error processing the data: " + ajv.errorsText()));
+router.post(
+  "/create",
+  authenticate.requiresLogin,
+  asyncHandler(async (req, res) => {
+    const roomData = req.body.roomData;
+    const valid = ajv.validate(ROOM_SCHEMA, roomData);
+
+    if (!valid) {
+      return res.json(
+        response.failure(
+          "There was an error processing the data: " + ajv.errorsText()
+        )
+      );
     }
 
     try {
-        let user = await authenticate.getUser({username: req.jwt.username}, ["rooms"]);
-        let room = new Room({
-            title: roomData.title,
-            desc: roomData.desc,
-            code: uuidv4(),
-            author: user,
-            public: roomData.public
+      const room = new Room({
+        title: roomData.title,
+        desc: roomData.desc,
+        code: randomUUID(),
+        author: req.user._id,
+        public: roomData.public,
+      });
+
+      const sections = [];
+      for (const sectionData of roomData.sections) {
+        const section = new Section({
+          ...sectionData,
+          code: randomUUID(),
+          room: room._id,
         });
+        await section.save();
+        sections.push(section);
+      }
 
-        let sections = [];
-        for(let i = 0; i < roomData.sections.length; i++) {
-            let section = new Section(roomData.sections[i]);
-            section.code = uuidv4();
-            section.room = room;
-            await section.save();
-            sections.push(section);
+      room.sections = sections.map((section) => section._id);
+      await room.save();
+
+      req.user.created.push(room._id);
+      await req.user.save();
+
+      return res.json(response.success("Room created successfully."));
+    } catch (error) {
+      console.log(error);
+      return res.json(
+        response.failure("There was an error saving your room. Please try again.")
+      );
+    }
+  })
+);
+
+router.post(
+  "/edit",
+  authenticate.requiresLogin,
+  asyncHandler(async (req, res) => {
+    const roomData = req.body.roomData;
+    const valid = ajv.validate(ROOM_SCHEMA, roomData);
+    if (!valid) {
+      return res.json(
+        response.failure(
+          "There was an error processing the data: " + ajv.errorsText()
+        )
+      );
+    }
+
+    const code = req.body.code;
+    if (typeof code !== "string") {
+      return res.json(response.failure("Missing room code."));
+    }
+
+    const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
+    const ownedRoom = user.created.find((entry) => entry.code === code);
+    if (!ownedRoom) {
+      return res.json(response.failure("You do not have a room with that code."));
+    }
+
+    const room = await Room.findById(ownedRoom._id).populate("sections").exec();
+    if (!room) {
+      return res.json(response.failure("Unable to find that room."));
+    }
+
+    room.title = roomData.title;
+    room.desc = roomData.desc;
+    room.public = roomData.public;
+
+    const updatedSections = [];
+    for (const sectionData of roomData.sections) {
+      if (sectionData.code) {
+        if (!validator.isUUID(sectionData.code)) {
+          return res.json(response.failure("Invalid section code."));
         }
 
-        room.sections = sections;
-        await room.save();
-
-        user.created.push(room);
-        await user.save();
-
-        return res.json(response.success("Room created successfully."));
-    }
-    catch(err) {
-        console.log(err);
-        return res.json(response.failure("There was an error saving your room. Please try again."));
-    }
-});
-
-router.post("/edit", authenticate.requiresLogin, async (req, res) => {
-    let roomData = req.body.roomData;
-
-    let result = ajv.validate(ROOM_SCHEMA, roomData);
-    if(!result) {
-        return res.json(response.failure("There was an error processing the data: " + ajv.errorsText()));
-    }
-
-    let code = req.body.code;
-    let user = await authenticate.getUser({username: req.jwt.username}, ["rooms"]);
-
-    let check = user.created.find(check => check.code === code);
-    if(!check) {
-        return res.json(response.failure("You do not have a room with that code."));
-    }
-
-    Room.findById(check._id).populate("sections").exec(async (err, room) => {
-        room.title = roomData.title;
-        room.desc = roomData.desc;
-
-        let sections = [];
-        for(let i = 0; i < roomData.sections.length; i++) {
-            let sectionData = roomData.sections[i];
-            if(sectionData.code && room.sections.find(section => section.code === sectionData.code)) {
-                let section = await Section.findByIdAndUpdate(room.sections.find(section => section.code === sectionData.code)._id, sectionData, { overwrite: true, new: true });
-                sections.push(section);
-            }
-            else {
-                let section = new Section(sectionData);
-                section.code = uuidv4();
-                section.room = room;    
-                sections.push(section);
-                await section.save();
-            }
+        const existingSection = room.sections.find(
+          (section) => section.code === sectionData.code
+        );
+        if (!existingSection) {
+          return res.json(response.failure("Invalid section code."));
         }
 
-        let remove = {
-            ids: [],
-            codes: []
-        };
-        for(let i = 0; i < room.sections.length; i++) {
-            if(!sections.find(section => section.code === room.sections[i].code)) {
-                remove.ids.push(room.sections[i]._id);
-                remove.codes.push(room.sections[i].code);
-            }
-        }
-
-        room.sections = sections;
-        room.public = roomData.public;
-        await room.save();
-
-        if(remove.ids.length > 0) {
-            let members = [...room.members, room.author];
-            for(let i = 0; i < members.length; i++) {
-                let user = await authenticate.getUser({_id: members[i]}, ["rooms"]);
-                for(let j = 0; j < user.completed.length; j++) {
-                    if(user.completed[j].room.code === room.code) {
-                        user.completed[j].sections = user.completed[j].sections.filter(sec => !remove.codes.includes(sec.code));
-                        await user.save();
-                    }
-                }
-            }
-        }
-
-        await Section.deleteMany({_id: {$in: remove.ids}});
-        return res.json(response.success("Room updated successfully."));
-    });
-});
-
-router.post("/delete", authenticate.requiresLogin, async (req, res) => {
-    let code = req.body.code;
-    let user = await authenticate.getUser({username: req.jwt.username}, ["rooms"]);
-
-    let check = user.created.find(check => check.code === code);
-    if(!check) {
-        return res.json(response.failure("You do not have a room with that code."));
+        existingSection.info = undefined;
+        existingSection.coding = undefined;
+        existingSection.quiz = undefined;
+        existingSection.flag = undefined;
+        existingSection.website = undefined;
+        existingSection.set({
+          ...sectionData,
+          room: room._id,
+        });
+        await existingSection.save();
+        updatedSections.push(existingSection);
+      } else {
+        const section = new Section({
+          ...sectionData,
+          code: randomUUID(),
+          room: room._id,
+        });
+        await section.save();
+        updatedSections.push(section);
+      }
     }
 
-    Room.findById(check._id).populate("sections").populate("members").populate("author").exec(async (err, room) => {
-        let members = [...new Set([...room.members, room.author])];
+    const removedSections = room.sections.filter(
+      (existingSection) =>
+        !updatedSections.find((section) => section.code === existingSection.code)
+    );
 
-        for(let i = 0; i < members.length; i++) {
-            let member = await authenticate.getUser({_id: members[i]._id}, ["rooms"]);
-            member.enrolled = member.enrolled.filter(e => e.code !== room.code);
-            member.created = member.created.filter(c => c.code !== room.code);
-            member.completed = member.completed.filter(c => c.room?.code !== room.code);
+    room.sections = updatedSections.map((section) => section._id);
+    await room.save();
+
+    if (removedSections.length > 0) {
+      const removedCodes = removedSections.map((section) => section.code);
+      const memberIds = [...new Set([String(room.author), ...room.members.map(String)])];
+      const members = await User.find({ _id: { $in: memberIds } })
+        .populate("completed.room")
+        .populate("completed.sections")
+        .exec();
+
+      await Promise.all(
+        members.map(async (member) => {
+          let changed = false;
+
+          for (const completion of member.completed) {
+            if (completion.room?.code !== room.code) {
+              continue;
+            }
+
+            const filteredSections = completion.sections.filter(
+              (section) => !removedCodes.includes(section.code)
+            );
+            if (filteredSections.length !== completion.sections.length) {
+              completion.sections = filteredSections.map((section) => section._id);
+              changed = true;
+            }
+          }
+
+          if (changed) {
             await member.save();
-        }
-        
-        for(let i = 0; i < room.sections.length; i++) {
-            await room.sections[i].delete();
-        }
-        await room.delete();
-
-        return res.json(response.success("Room deleted successfully."));
-    });
-});
-
-router.post("/info", authenticate.requiresLogin, async (req, res) => {
-    let code = req.body.code;
-    if (!code || typeof code !== 'string') {
-        return res.json(response.failure("Missing code."));
+          }
+        })
+      );
     }
 
-    let user = await authenticate.getUser({username: req.jwt.username}, ["rooms"]);
-
-    Room.findOne({ code })
-    .populate("sections")
-    .populate({path: "members", populate: {path: "completed", populate: {path: "room sections" }}})
-    .populate("author").exec((err, room) => {
-        if(err || !room) {
-            return res.json(response.failure("Unable to find room."));
-        }
-
-        let clone = response.sanitize(room);
-
-        clone.author = clone.author.username;
-
-        let completed = user.completed.find(c => c.room.code === room.code);
-
-        for(let i = 0; i < clone.sections.length; i++) {
-            if(completed && completed.sections.find(s => s.code === clone.sections[i].code))
-                clone.sections[i].completed = true;
-            else
-                clone.sections[i].completed = false;        
-        }
-
-        if(user.username !== clone.author) {
-            clone.sections = response.sanitize(clone.sections, ["flag"]);
-            for(let i = 0; i < clone.sections.length; i++) {
-                if(clone.sections[i].type === "coding")
-                    clone.sections[i].coding.checks = clone.sections[i].coding.checks.map(c => true); 
-                if(clone.sections[i].type === "quiz") {
-                    clone.sections[i].quiz.answers = clone.sections[i].quiz.answers.map(answer => ({choice: answer.choice}));
-                }
-            }
-            delete clone.members;
-        }
-        else {
-            clone.members = clone.members.map(m => ({
-                username: m.username,
-                completed: m.completed.filter(c => c.room.code === code)[0]?.sections.map(s => s.code)
-            }));
-        }
-
-        clone.sections = response.sanitize(clone.sections, ["room"]);
-        for(let i = 0; i < clone.sections.length; i++) {
-            for(let type of SECTION_TYPES.filter(t => t !== clone.sections[i].type))
-                delete clone.sections[i][type]; 
-        }
-
-        return res.json(response.success(clone));
-    });
-});
-
-router.post("/complete", authenticate.requiresLogin, async (req, res) => {
-    if(!req.body.room || typeof req.body.room !== 'string') {
-        return res.json(response.failure("Missing room."));
-    }
-    if(!req.body.section || typeof req.body.section !== 'string') {
-        return res.json(response.failure("Missing section."));
+    if (removedSections.length > 0) {
+      await Section.deleteMany({
+        _id: { $in: removedSections.map((section) => section._id) },
+      });
     }
 
-    let user = await authenticate.getUser({username: req.jwt.username}, ["rooms"]);
-    await check.verify({user: user, res, ...req.body});
-});
+    return res.json(response.success("Room updated successfully."));
+  })
+);
 
-router.post("/join", authenticate.requiresLogin, async (req, res) => {
-    if(!req.body.code || typeof req.body.code !== 'string') {
-        return res.json(response.failure("Missing room."));
+router.post(
+  "/delete",
+  authenticate.requiresLogin,
+  asyncHandler(async (req, res) => {
+    const code = req.body.code;
+    if (typeof code !== "string") {
+      return res.json(response.failure("Missing room code."));
     }
 
-    let code = req.body.code;
-    let user = await authenticate.getUser({username: req.jwt.username}, ["rooms"]);
-
-    if(user.enrolled.find(r => r.code === code) || user.created.find(r => r.code === code)) {
-        return res.json(response.failure("You are already in that room."));
+    const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
+    const ownedRoom = user.created.find((entry) => entry.code === code);
+    if (!ownedRoom) {
+      return res.json(response.failure("You do not have a room with that code."));
     }
 
-    Room.findOne({ code }, (err, room) => {
-        if(err || !room) {
-            return res.json(response.failure("Unable to find room."));
+    const room = await Room.findById(ownedRoom._id).populate("sections").exec();
+    if (!room) {
+      return res.json(response.failure("Unable to find that room."));
+    }
+
+    const memberIds = [...new Set([String(room.author), ...room.members.map(String)])];
+    await User.updateMany(
+      { _id: { $in: memberIds } },
+      {
+        $pull: {
+          enrolled: room._id,
+          created: room._id,
+          completed: { room: room._id },
+        },
+      }
+    ).exec();
+
+    await Section.deleteMany({
+      _id: { $in: room.sections.map((section) => section._id) },
+    }).exec();
+    await Room.deleteOne({ _id: room._id }).exec();
+
+    return res.json(response.success("Room deleted successfully."));
+  })
+);
+
+router.post(
+  "/info",
+  authenticate.requiresLogin,
+  asyncHandler(async (req, res) => {
+    const code = req.body.code;
+    if (!code || typeof code !== "string") {
+      return res.json(response.failure("Missing code."));
+    }
+
+    const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
+    const room = await Room.findOne({ code })
+      .populate("sections")
+      .populate("members")
+      .populate("author")
+      .exec();
+
+    if (!room) {
+      return res.json(response.failure("Unable to find room."));
+    }
+
+    const isMember =
+      user.enrolled.some((entry) => entry.code === code) ||
+      user.created.some((entry) => entry.code === code);
+    if (!isMember && !room.public) {
+      return res.json(response.failure("You are not in that room."));
+    }
+
+    await User.populate(room.members, [
+      { path: "completed.room" },
+      { path: "completed.sections" },
+    ]);
+
+    const clone = response.sanitize(room);
+    clone.author = clone.author.username;
+
+    const completed = user.completed.find((entry) => entry.room.code === room.code);
+
+    for (let index = 0; index < clone.sections.length; index += 1) {
+      clone.sections[index].completed = Boolean(
+        completed &&
+          completed.sections.find(
+            (section) => section.code === clone.sections[index].code
+          )
+      );
+    }
+
+    if (user.username !== clone.author) {
+      clone.sections = response.sanitize(clone.sections, ["flag"]);
+      for (const section of clone.sections) {
+        if (section.type === "coding") {
+          section.coding.checks = section.coding.checks.map(() => true);
         }
-
-        user.enrolled.push(room);
-        room.members.push(user);
-        room.save();
-        user.save();
-
-        return res.json(response.success("You have successfully joined the room."));
-    });
-});
-
-router.get("/list", async (req, res) => {
-    Room.find({ public: true }).populate("author").exec((err, docs) => {
-        if(err) {
-            return res.json(response.failure("Unable to list public rooms."));
+        if (section.type === "quiz") {
+          section.quiz.answers = section.quiz.answers.map((answer) => ({
+            choice: answer.choice,
+          }));
         }
-        let rooms = docs.map(r => ({ code: r.code, title: r.title, desc: r.desc, author: r.author.username }));
-        return res.json(response.success(rooms));
-    });
-});
+      }
+      delete clone.members;
+    } else {
+      clone.members = clone.members.map((member) => ({
+        username: member.username,
+        completed: member.completed
+          .filter((entry) => entry.room.code === code)[0]
+          ?.sections?.map((section) => section.code),
+      }));
+    }
+
+    clone.sections = response.sanitize(clone.sections, ["room"]);
+    for (const section of clone.sections) {
+      for (const type of SECTION_TYPES.filter((value) => value !== section.type)) {
+        delete section[type];
+      }
+    }
+
+    return res.json(response.success(clone));
+  })
+);
+
+router.post(
+  "/complete",
+  authenticate.requiresLogin,
+  asyncHandler(async (req, res) => {
+    if (!req.body.room || typeof req.body.room !== "string") {
+      return res.json(response.failure("Missing room."));
+    }
+    if (!req.body.section || typeof req.body.section !== "string") {
+      return res.json(response.failure("Missing section."));
+    }
+
+    const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
+    await check.verify({ user, res, ...req.body });
+  })
+);
+
+router.post(
+  "/join",
+  authenticate.requiresLogin,
+  asyncHandler(async (req, res) => {
+    if (!req.body.code || typeof req.body.code !== "string") {
+      return res.json(response.failure("Missing room."));
+    }
+
+    const code = req.body.code;
+    const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
+
+    if (
+      user.enrolled.find((room) => room.code === code) ||
+      user.created.find((room) => room.code === code)
+    ) {
+      return res.json(response.failure("You are already in that room."));
+    }
+
+    const room = await Room.findOne({ code }).exec();
+    if (!room) {
+      return res.json(response.failure("Unable to find room."));
+    }
+
+    user.enrolled.push(room._id);
+    room.members.push(user._id);
+    await Promise.all([room.save(), user.save()]);
+
+    return res.json(response.success("You have successfully joined the room."));
+  })
+);
+
+router.get(
+  "/list",
+  asyncHandler(async (req, res) => {
+    const { page, limit, search } = req.query;
+    const hasPagination = page !== undefined || limit !== undefined;
+    const parsedPage = Math.max(Number.parseInt(page || "1", 10) || 1, 1);
+    const parsedLimit = Math.min(
+      Math.max(Number.parseInt(limit || "20", 10) || 20, 1),
+      100
+    );
+
+    const query = { public: true };
+    if (typeof search === "string" && search.trim().length > 0) {
+      const regex = new RegExp(escapeRegex(search.trim()), "i");
+      const authors = await User.find({ username: regex }, "_id").lean().exec();
+      query.$or = [
+        { title: regex },
+        { desc: regex },
+        { author: { $in: authors.map((author) => author._id) } },
+      ];
+    }
+
+    const total = await Room.countDocuments(query);
+    const findQuery = Room.find(query).populate("author");
+
+    if (hasPagination) {
+      findQuery.skip((parsedPage - 1) * parsedLimit).limit(parsedLimit);
+    }
+
+    const docs = await findQuery.exec();
+    const rooms = docs.map((room) => ({
+      code: room.code,
+      title: room.title,
+      desc: room.desc,
+      author: room.author.username,
+    }));
+
+    if (!hasPagination && !search) {
+      return res.json(response.success(rooms));
+    }
+
+    return res.json(
+      response.success({
+        rooms,
+        pagination: {
+          page: parsedPage,
+          limit: parsedLimit,
+          total,
+          totalPages: Math.max(Math.ceil(total / parsedLimit), 1),
+        },
+      })
+    );
+  })
+);
 
 export default router;

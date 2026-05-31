@@ -77,15 +77,32 @@ const userSchema = Schema({
         min: 0,
         default: 0
     }
+}, {
+    timestamps: true
 });
+
+const calculateStorageSize = (storage = []) => (
+    storage.reduce(
+        (total, folder) => total + folder.files.reduce((folderTotal, file) => folderTotal + file.size, 0),
+        0
+    )
+);
 
 userSchema.plugin(uniqueValidator);
 userSchema.pre('save', function(next) {
-    this.size = this.storage.reduce((a, v) => a + v.files.reduce((a2, v2) => a2 + v2.size, 0), 0);
+    this.size = calculateStorageSize(this.storage);
     next();
 });
-userSchema.pre('update', function(next) {
-    this.size = this.storage.reduce((a, v) => a + v.files.reduce((a2, v2) => a2 + v2.size, 0), 0);
+userSchema.pre('findOneAndUpdate', function(next) {
+    const update = this.getUpdate();
+    const nextStorage = update?.storage || update?.$set?.storage;
+    if (Array.isArray(nextStorage)) {
+        if (!update.$set) {
+            update.$set = {};
+        }
+        update.$set.size = calculateStorageSize(nextStorage);
+        this.setUpdate(update);
+    }
     next();
 });
 export default mongoose.model('User', userSchema);

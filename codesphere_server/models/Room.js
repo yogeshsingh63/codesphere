@@ -41,6 +41,8 @@ const roomSchema = Schema({
         required: true,
         default: false
     }
+}, {
+    timestamps: true
 });
 
 roomSchema.plugin(uniqueValidator);

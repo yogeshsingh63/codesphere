@@ -115,7 +115,9 @@ const sectionSchema = Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Room'
     }
-
+}, {
+    timestamps: true
 });
 sectionSchema.plugin(uniqueValidator);
+sectionSchema.index({ code: 1 }, { unique: true });
 export default mongoose.model('Section', sectionSchema);

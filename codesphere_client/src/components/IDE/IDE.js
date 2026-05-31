@@ -33,12 +33,24 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
 
   const [status, setStatus] = React.useState("disconnected");
   const [ws, setWS] = React.useState(null);
+  const sendMessage = React.useCallback((payload) => {
+    if(ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(payload));
+    }
+  }, [ws]);
   const connectWS = React.useCallback(() => {
     if(ws && [WebSocket.OPEN, WebSocket.CONNECTING].includes(ws.readyState)) {
       return;
     }
 
-    let socket = new WebSocket(process.env.REACT_APP_API_URL.replace("https", "wss").replace("http", "ws") + "/ws");
+    if(!token) {
+      return;
+    }
+
+    let socket = new WebSocket(
+      process.env.REACT_APP_API_URL.replace("https", "wss").replace("http", "ws") +
+      "/ws?token=" + encodeURIComponent(token)
+    );
 
     socket.onopen = () => {
       if(status === "disconnected")
@@ -50,12 +62,12 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
     setWS(socket);
 
     return () => {
-      ws.close();
+      socket.close();
     };
-  }, [ws, status]);
+  }, [ws, status, token]);
 
   React.useEffect(() => {
-    connectWS();
+    return connectWS();
   }, [connectWS]);
 
   const [active, setActive] = React.useState({
@@ -132,22 +144,22 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
   React.useEffect(() => {
     if(!section || !collab || status === "disconnected")
       return;
-    ws.send(JSON.stringify({
+    sendMessage({
       type: "collab",
       meta: "leave"
-    }))
-  }, [collab, status, ws, section]);
+    });
+  }, [collab, section, sendMessage, status]);
 
   React.useEffect(() => {
     if(status === "connected" && collabCode && !collab) {
       setCollab(true);
-      ws.send(JSON.stringify({
+      sendMessage({
         type: "collab",
         meta: "join",
         code: collabCode
-      }));
+      });
     }
-  }, [collab, status, collabCode, ws]);
+  }, [collab, collabCode, sendMessage, status]);
 
   const syntaxTable = {
     'python': 'text/x-python',
@@ -261,38 +273,38 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
     }
 
     if(collab && status !== "disconnected" && !transferred.current) {
-      ws.send(JSON.stringify({
+      sendMessage({
         type: "collab",
         meta: "update",
         msg: active
-      }));
+      });
     }
     transferred.current = false;
-  }, [active, collab, status, storageKey, ws, useFileStorage]);
+  }, [active, collab, sendMessage, status, storageKey, useFileStorage]);
 
   const run = () => {
     setActive(prev => ({...prev, output: []}));
 
-    ws.send(JSON.stringify({
+    sendMessage({
       type: "run",
       files: active.files,
       input: active.input,
       lang: active.lang.lang
-    }));
+    });
   };
 
   const check = () => {
     if(room && section && isSignedIn) {
       setActive(prev => ({...prev, output: []}));
 
-      ws.send(JSON.stringify({
+      sendMessage({
         type: "check",
         room,
         section,
         token,
         files: active.files,
         lang: active.lang.lang,
-      }));
+      });
     }
   }
 
