@@ -209,11 +209,13 @@ router.post(
 );
 
 router.post("/login", (req, res, next) => {
-  passport.authenticate("local", (err, user) => {
+  passport.authenticate("local", (err, user, info) => {
     if (err) {
+      console.error("[LOGIN ERROR] Passport returned err:", err);
       return res.json(response.failure("There was an error signing in."));
     }
     if (!user) {
+      console.error("[LOGIN ERROR] No user found/matched. Info:", info);
       return res.json(response.failure("Incorrect username or password."));
     }
     return res.json(response.success(authenticate.sign(user)));
