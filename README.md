@@ -23,20 +23,20 @@ To run CodeSphere on your local machine, you'll need to set up the frontend clie
 *   [npm](https://www.npmjs.com/)
 *   A local or cloud-based MongoDB instance.
 
-### 2. Backend Server (`codesphere_server`)
+### 2. Backend Server (`server`)
 
 The server handles API requests, user authentication, and the real-time collaboration sockets.
 
 1.  **Navigate to the server directory:**
     ```bash
-    cd codesphere_server
+    cd server
     ```
 2.  **Install dependencies:**
     ```bash
     npm install
     ```
 3.  **Set up environment variables:**
-    Create a `.env` file in the `codesphere_server` directory and add the following variables.
+    Create a `.env` file in the `server` directory and add the following variables.
 
     ```env
     # The port for the backend server to run on
@@ -59,20 +59,20 @@ The server handles API requests, user authentication, and the real-time collabor
     ```
     The server should now be running on `http://localhost:3001`.
 
-### 3. Frontend Client (`codesphere_client`)
+### 3. Frontend Client (`client`)
 
 The client is a React application that provides the user interface.
 
 1.  **Navigate to the client directory:**
     ```bash
-    cd codesphere_client
+    cd client
     ```
 2.  **Install dependencies:**
 ```bash
     npm install
     ```
 3.  **Set up environment variables:**
-    Create a `.env` file in the `codesphere_client` directory and add the following:
+    Create a `.env` file in the `client` directory and add the following:
 
     ```env
     # The URL of your running backend server
@@ -91,8 +91,8 @@ The client is a React application that provides the user interface.
 
 This project is configured for a modern, serverless deployment workflow.
 
-*   **Backend**: Deploy the `codesphere_server` directory to [Render](https://render.com/).
-*   **Frontend**: Deploy the `codesphere_client` directory to [Vercel](https://vercel.com/).
+*   **Backend**: Deploy the `server` directory to [Render](https://render.com/).
+*   **Frontend**: Deploy the `client` directory to [Vercel](https://vercel.com/).
 *   **Database**: Use a free-tier cluster from [MongoDB Atlas](https://www.mongodb.com/cloud/atlas).
 
 ### Deployment Environment Variables

@@ -1,4 +1,4 @@
-# codesphere_server
+# server
 The back-end of the codesphere webapp.
 Built using Express, Mongoose, and Dockerode.
 
