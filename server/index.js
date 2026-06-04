@@ -28,18 +28,36 @@ const wss = new WebSocketServer({ noServer: true });
 sockets.configure(wss);
 
 let mongoURI;
-if (process.env.MONGO_IP && process.env.MONGO_IP.startsWith("mongodb+srv")) {
-  mongoURI = process.env.MONGO_IP;
-} else if (process.env.MONGO_USER && process.env.MONGO_PASS) {
-  mongoURI = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${process.env.MONGO_IP}/${process.env.MONGO_DBNAME}`;
-} else {
-  mongoURI = `mongodb://${process.env.MONGO_IP}/${process.env.MONGO_DBNAME}`;
+const mongoIP =
+  process.env.MONGO_IP ||
+  process.env.MONGO_URI ||
+  process.env.MONGODB_URI ||
+  process.env.DATABASE_URL;
+
+if (!mongoIP) {
+  console.error(
+    "[FATAL] No MongoDB connection string found. " +
+      "Set MONGO_IP (or MONGO_URI / MONGODB_URI) in your environment variables."
+  );
+  process.exit(1);
 }
+
+if (mongoIP.startsWith("mongodb+srv") || mongoIP.startsWith("mongodb://")) {
+  mongoURI = mongoIP;
+} else if (process.env.MONGO_USER && process.env.MONGO_PASS) {
+  mongoURI = `mongodb://${process.env.MONGO_USER}:${process.env.MONGO_PASS}@${mongoIP}/${process.env.MONGO_DBNAME}`;
+} else {
+  mongoURI = `mongodb://${mongoIP}/${process.env.MONGO_DBNAME}`;
+}
+
+console.log(
+  `[DB] Connecting to MongoDB at ${mongoURI.replace(/\/\/.*@/, "//***@")}...`
+);
 
 mongoose
   .connect(mongoURI)
-  .then(() => console.log("Connected to MongoDB"))
-  .catch((error) => console.error("MongoDB connection error:", error));
+  .then(() => console.log("[DB] Connected to MongoDB"))
+  .catch((error) => console.error("[DB] MongoDB connection error:", error));
 
 let isShuttingDown = false;
 let inFlightRequests = 0;
@@ -91,14 +109,35 @@ app.use(express.urlencoded({ extended: false, limit: "128mb" }));
 app.use(express.json({ limit: "128mb" }));
 app.use(requestSanitizer);
 
+// Parse allowed origins from env (supports comma-separated list).
+// Strip trailing slashes to avoid mismatch with browser-sent origins.
+const allowedOrigins = (process.env.ORIGIN || "")
+  .split(",")
+  .map((o) => o.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
 const corsOptions = {
   origin: function (origin, callback) {
+    // Allow server-to-server / same-origin requests (no origin header)
     if (!origin) return callback(null, true);
+
+    // Always allow localhost during development
     if (origin.startsWith("http://localhost:")) {
       return callback(null, true);
     }
-    return callback(null, process.env.ORIGIN);
+
+    // Normalize incoming origin (strip trailing slash just in case)
+    const normalized = origin.replace(/\/+$/, "");
+
+    if (allowedOrigins.includes(normalized)) {
+      return callback(null, true);
+    }
+
+    callback(new Error(`Origin ${origin} is not allowed by CORS`));
   },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));

@@ -73,6 +73,10 @@ function SignUp() {
       else {
         setError(json.response);
       }
+    })
+    .catch(err => {
+      setDisabled(false);
+      setError("Network error. Please try again.");
     });
   }
 
