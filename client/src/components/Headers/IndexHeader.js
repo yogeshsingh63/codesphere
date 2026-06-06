@@ -38,7 +38,7 @@ function IndexHeader() {
             <img
               alt="..."
               className="n-logo"
-              src={asset("assets/img/logo.png")}
+              src={asset("assets/img/favicon.png")}
             ></img>
             <h1 className="h1-seo">CodeSphere</h1>
             <h3>An open-source, collaborative, and free learning & coding environment for all.</h3>

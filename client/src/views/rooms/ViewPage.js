@@ -216,7 +216,7 @@ function ViewPage() {
                       ></img>
                     ) : (
                       <img
-                        src={asset("assets/img/logo.png")}
+                        src={asset("assets/img/favicon.png")}
                         alt="codesphere logo"
                         className="c-info-img c-hide-on-small"
                       ></img>
