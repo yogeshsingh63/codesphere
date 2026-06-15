@@ -216,69 +216,79 @@ function CreatePage() {
         <ImportModal open={setImportModal} isOpen={importModal} submit={finishImport} />
 
         <ProfilePageHeader />
-        <div className="section">
+        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
           <Container>
-            <h3 className="title">Room {isEditing ? "Editor": "Creator"}</h3>
-            <h4 className="title">Room Details</h4>
-            {isEditing && <h5>Room Code: {code}</h5>}
-            <Row>
-              <Col>
-               <Form>
-                <FormGroup>
-                  <label htmlFor="title-input">Room Title</label>
-                  <Input
-                    placeholder="Enter title"
-                    type="text"
-                    id="title-input"
-                    value={title}
-                    onChange={e => setTitle(e.target.value)}
-                  ></Input>
-                </FormGroup>
-                <FormGroup>
-                  <label htmlFor="desc-input">Description</label>
-                  <Input
-                    placeholder="Enter description"
-                    type="text"
-                    id="desc-input"
-                    value={desc}
-                    onChange={e => setDesc(e.target.value)}
-                  ></Input>
-                </FormGroup>
-                <FormGroup check>
-                  <Label check>
-                    <Input
-                      type="checkbox"
-                      checked={isPublic}
-                      onChange={e => setPublic(e.target.checked)}
-                    >
-                    </Input>
-                    <span className="form-check-sign"></span>
-                    Public Room
-                  </Label>
-                </FormGroup>
-              </Form>
-              </Col>
-            </Row>
-            <h4 className="title">Sections</h4>
-            <br />
-            <Row>
+            <h3 className="title" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
+              Room {isEditing ? "Editor": "Creator"}
+            </h3>
+            {isEditing && <h5 style={{ fontSize: '0.925rem', color: '#64748b', marginBottom: '24px' }}>Room Code: <strong style={{ color: '#6366f1' }}>{code}</strong></h5>}
+            
+            <h4 className="title" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '16px' }}>Room Details</h4>
+            <Card style={{ border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: '24px' }}>
+              <CardBody style={{ padding: '28px' }}>
+                <Row>
+                  <Col>
+                    <Form>
+                      <FormGroup>
+                        <label htmlFor="title-input" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Room Title</label>
+                        <Input
+                          placeholder="Enter title"
+                          type="text"
+                          id="title-input"
+                          value={title}
+                          onChange={e => setTitle(e.target.value)}
+                          style={{ borderRadius: '8px' }}
+                        />
+                      </FormGroup>
+                      <FormGroup>
+                        <label htmlFor="desc-input" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Description</label>
+                        <Input
+                          placeholder="Enter description"
+                          type="text"
+                          id="desc-input"
+                          value={desc}
+                          onChange={e => setDesc(e.target.value)}
+                          style={{ borderRadius: '8px' }}
+                        />
+                      </FormGroup>
+                      <FormGroup check className="pl-0" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Label check style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
+                          <Input
+                            type="checkbox"
+                            checked={isPublic}
+                            onChange={e => setPublic(e.target.checked)}
+                            style={{ position: 'static', margin: 0, width: '16px', height: '16px', borderRadius: '4px' }}
+                          />
+                          Public Room
+                        </Label>
+                      </FormGroup>
+                    </Form>
+                  </Col>
+                </Row>
+              </CardBody>
+            </Card>
+
+            <h4 className="title" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginTop: '36px', marginBottom: '16px' }}>Sections</h4>
+            <Row style={{ gap: '16px', paddingLeft: '15px' }}>
               <SortableContainer onSortEnd={onSortEnd} axis="x">
-                {sections.map((value, index) => (
-                  <SortableItem key={index} index={index} value={fixupSection(value)} />
-                ))}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+                  {sections.map((value, index) => (
+                    <SortableItem key={index} index={index} value={fixupSection(value)} />
+                  ))}
+                </div>
               </SortableContainer>
               <SectionCard title="Create Section" desc="Create a new section here." button="Create +" onClick={() => setInputOptions({title: "Enter Section Title:", body: "", submit: createSection})}/>
             </Row>
 
             {(isEditing && members && members.length > 0) && (
               <>
-                <h4 className="title">Members</h4>
-                <h5>Total enrolled: {members.length} </h5>
+                <h4 className="title" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginTop: '36px', marginBottom: '8px' }}>Members</h4>
+                <h5 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '16px' }}>Total enrolled: {members.length} </h5>
 
                 <PaginatedTable
                   columns={[
                     {title: "Username", field: "username", formatter: (item) => (
-                      <Link to={"/profile/" + item.username}>{item.username}</Link>
+                      <Link to={"/profile/" + item.username} style={{ color: '#6366f1', fontWeight: 500 }}>{item.username}</Link>
                     )},
                     {title: "Completion", field: "completed", formatter: (item) => (
                       <>{item.completed ? item.completed.length : 0} / {sections.length} sections</>
@@ -291,21 +301,23 @@ function CreatePage() {
               </>
             )}
 
-            <Row>
+            <Row style={{ marginTop: '36px', borderTop: '1px solid #e2e8f0', paddingTop: '24px', marginLeft: 0, marginRight: 0 }}>
               <Col className="p-0">
-                <Button color="danger" type="button" size="sm" onClick={() => history.push("/home")}>&larr; Back</Button>
+                <Button color="primary" outline type="button" size="sm" onClick={() => history.push("/home")} style={{ fontWeight: 600, borderRadius: '8px' }}>&larr; Back</Button>
               </Col>
-              <Col className="text-right p-0">
-                <Button color="success" type="button" size="sm" onClick={() => setExportModal(true)}>Export</Button>
-                <Button color="primary" type="button" size="sm" onClick={() => setImportModal(true)}>Import</Button>
-                {isEditing && (<Button color="danger" type="button" size="sm" onClick={() => setConfirmOptions({
-                    title: "Confirm Deletion",
-                    body: "Are you sure you want to delete this room?",
-                    submit: deleteRoom,
-                    yesColor: "danger",
-                    noColor: "info"
-                })}>Delete</Button>)}
-                <Button color="info" type="button" size="sm" onClick={saveRoom}>Save</Button>
+              <Col className="text-right p-0" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <Button color="success" type="button" size="sm" onClick={() => setExportModal(true)} style={{ fontWeight: 600, borderRadius: '8px' }}>Export</Button>
+                <Button color="primary" outline type="button" size="sm" onClick={() => setImportModal(true)} style={{ fontWeight: 600, borderRadius: '8px' }}>Import</Button>
+                {isEditing && (
+                  <Button color="danger" type="button" size="sm" onClick={() => setConfirmOptions({
+                      title: "Confirm Deletion",
+                      body: "Are you sure you want to delete this room?",
+                      submit: deleteRoom,
+                      yesColor: "danger",
+                      noColor: "primary"
+                  })} style={{ fontWeight: 600, borderRadius: '8px' }}>Delete</Button>
+                )}
+                <Button color="primary" type="button" size="sm" onClick={saveRoom} style={{ fontWeight: 600, borderRadius: '8px' }}>Save</Button>
               </Col>
             </Row>
           </Container>
