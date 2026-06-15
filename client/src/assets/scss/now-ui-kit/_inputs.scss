@@ -2,34 +2,35 @@
 @import "mixins";
 
 .form-control {
-  @include form-control-placeholder($default-color, .8);
+  @include form-control-placeholder($dark-gray, 1);
 }
 
 .form-control {
-    background-color: $transparent-bg;
-    border: 1px solid $light-gray;
-    border-radius: $btn-round-radius;
+    background-color: $white-bg;
+    border: 1.5px solid $light-gray;
+    border-radius: 8px;
     color: $black-color;
     height: auto;
-    line-height: normal;
-    font-size: $font-size-small;
+    line-height: 1.5;
+    font-size: 0.875rem;
+    padding: 0.625rem 0.875rem;
     @include transition-input-focus-color();
     @include box-shadow(none);
+    transition: all 0.15s ease;
 
     .has-success &{
         border-color: $light-gray;
     }
 
     &:focus{
-        border: 1px solid $primary-color;
-        @include box-shadow(none);
+        border-color: $primary-color;
+        @include box-shadow(0 0 0 3px $primary-color-opacity);
         outline: 0 !important;
         color: $black-color;
 
         & + .input-group-text,
         & ~ .input-group-text{
-            border: 1px solid $primary-color;
-            border-left: none;
+            border-color: $primary-color;
             background-color: $transparent-bg;
         }
     }
@@ -42,7 +43,8 @@
     }
 
     .has-success &:focus{
-        border-color: lighten($success-color, 5%);
+        border-color: $success-color;
+        box-shadow: 0 0 0 3px $success-color-opacity;
     }
 
 
@@ -55,12 +57,13 @@
     }
 
     .has-danger &{
-        border-color: lighten($danger-color, 30%);
+        border-color: $danger-color;
         color: $danger-color;
-        background-color: rgba(222,222,222, .1);
+        background-color: rgba(254, 202, 202, .1);
 
         &:focus{
             background-color: $white-color;
+            box-shadow: 0 0 0 3px $danger-color-opacity;
         }
     }
 
@@ -75,13 +78,9 @@
     }
 
     .open &{
-        border-radius: $border-radius-large $border-radius-large 0 0;
+        border-radius: 8px 8px 0 0;
         border-bottom-color: transparent;
     }
-
-    // & + .input-group-text{
-    //     background-color: $white-bg;
-    // }
 }
 
 .has-success,

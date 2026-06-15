@@ -1,47 +1,61 @@
-/*eslint-disable*/
 import React from "react";
 import asset from "utils/asset.js";
 
-// reactstrap components
 import { Container } from "reactstrap";
-// core components
 
 function IndexHeader() {
-  let pageHeader = React.createRef();
-
-  React.useEffect(() => {
-    if (window.innerWidth > 991) {
-      const updateScroll = () => {
-        let windowScrollTop = window.pageYOffset / 3;
-        pageHeader.current.style.transform =
-          "translate3d(0," + windowScrollTop + "px,0)";
-      };
-      window.addEventListener("scroll", updateScroll);
-      return function cleanup() {
-        window.removeEventListener("scroll", updateScroll);
-      };
-    }
-  });
-
   return (
     <>
-      <div className="page-header clear-filter" filter-color="blue">
+      <div
+        className="page-header clear-filter"
+        filter-color="blue"
+        style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)',
+          minHeight: '92vh',
+          display: 'flex',
+          alignItems: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
+      >
         <div
-          className="page-header-image"
           style={{
-            backgroundImage: "url(" + asset("assets/img/header.jpg") + ")",
+            position: 'absolute',
+            top: '-50%',
+            right: '-20%',
+            width: '600px',
+            height: '600px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+            pointerEvents: 'none'
           }}
-          ref={pageHeader}
-        ></div>
+        />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: '-30%',
+            left: '-10%',
+            width: '400px',
+            height: '400px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(14,165,233,0.1) 0%, transparent 70%)',
+            pointerEvents: 'none'
+          }}
+        />
         <Container>
-          <div className="content-center brand">
+          <div className="content-center brand" style={{ position: 'relative' }}>
             <img
-              alt="..."
+              alt="CodeSphere"
               className="n-logo"
               src={asset("assets/img/favicon.png")}
-            ></img>
-            <h1 className="h1-seo">CodeSphere</h1>
-            <h3>An open-source, collaborative, and free learning & coding environment for all.</h3>
+              style={{ maxWidth: '80px', marginBottom: '24px', opacity: 0.9 }}
+            />
+            <h1 className="h1-seo" style={{ fontSize: '3.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '16px' }}>
+              CodeSphere
+            </h1>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 400, color: 'rgba(255,255,255,0.7)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+              An open-source, collaborative, and free learning & coding environment for all.
+            </h3>
           </div>
         </Container>
       </div>

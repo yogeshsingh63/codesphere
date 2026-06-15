@@ -1,16 +1,12 @@
 import React from "react";
 import asset from "utils/asset.js";
 
-// reactstrap components
-import { Container } from "reactstrap";
+import { Container, Row, Col } from "reactstrap";
 import { useAuthState } from "context/auth.js";
 
 import fetch from "utils/fetch.js";
 
-// core components
-
 function ProfilePageHeader() {
-  let pageHeader = React.createRef();
   const { user } = useAuthState();
 
   const [done, setDone] = React.useState(0);
@@ -48,45 +44,57 @@ function ProfilePageHeader() {
     });
   }, []);
 
-  React.useEffect(() => {
-    if (window.innerWidth > 991) {
-      const updateScroll = () => {
-        let windowScrollTop = window.pageYOffset / 3;
-        if(pageHeader && pageHeader.current)
-          pageHeader.current.style.transform = "translate3d(0," + windowScrollTop + "px,0)";
-      };
-      window.addEventListener("scroll", updateScroll);
-      return function cleanup() {
-        window.removeEventListener("scroll", updateScroll);
-      };
-    }
-  });
-
   return (
     <>
       <div
         className="page-header clear-filter page-header-small"
-        filter-color="blue"
+        style={{
+          background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+          minHeight: '280px',
+          display: 'flex',
+          alignItems: 'center',
+          position: 'relative',
+          overflow: 'hidden'
+        }}
       >
         <div
-          className="page-header-image"
           style={{
-            backgroundImage: "url(" + asset("assets/img/bg5.jpg") + ")",
+            position: 'absolute',
+            top: '-60%',
+            right: '-10%',
+            width: '500px',
+            height: '500px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
+            pointerEvents: 'none'
           }}
-          ref={pageHeader}
-        ></div>
+        />
         <Container>
-          <h3 className="title">Welcome, {user}!</h3>
-          <div className="content">
-            <div className="d-inline-block mr-2">
-              <h2>{done}</h2>
-              <p>Rooms Done</p>
-            </div>
-            <div className="d-inline-block ml-2">
-              <h2>{joined}</h2>
-              <p>Rooms Joined</p>
-            </div>
-          </div>
+          <Row className="align-items-center">
+            <Col>
+              <h3 className="title" style={{ color: 'white', margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>
+                Welcome, {user}!
+              </h3>
+            </Col>
+            <Col className="text-right">
+              <div className="d-inline-block text-center" style={{ marginRight: '32px' }}>
+                <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 700, margin: 0 }}>
+                  {done}
+                </h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.875rem' }}>
+                  Rooms Done
+                </p>
+              </div>
+              <div className="d-inline-block text-center">
+                <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 700, margin: 0 }}>
+                  {joined}
+                </h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.875rem' }}>
+                  Rooms Joined
+                </p>
+              </div>
+            </Col>
+          </Row>
         </Container>
       </div>
     </>

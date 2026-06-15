@@ -1,8 +1,9 @@
 .footer{
-    padding: 24px 0;
+    padding: 20px 0;
+    border-top: 1px solid $light-gray;
 
     &.footer-default{
-        background-color: #f2f2f2;
+        background-color: #f8fafc;
     }
 
     nav{
@@ -22,7 +23,6 @@
                 color: inherit;
                 padding: $padding-base-vertical;
                 font-size: $font-size-small;
-                text-transform: uppercase;
                 text-decoration: none;
 
                 &:hover{
@@ -33,7 +33,8 @@
     }
 
     .copyright{
-        font-size: $font-size-small;
+        font-size: 0.8125rem;
+        color: $dark-gray;
     }
 
     &:after{

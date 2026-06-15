@@ -24,6 +24,11 @@ html, body, #root {
 	height: 100%;
 }
 
+body {
+	background-color: #f8fafc;
+	color: #1e293b;
+}
+
 .room-col-text {
 	background-color: white !important;
 	overflow-y: auto;
@@ -37,12 +42,15 @@ html, body, #root {
 }
 
 .room-type {
-	background-color: #e1e1e1;
+	background-color: #f1f5f9;
 	width: 100%;
 	margin: 0 !important;
-	padding: .75rem !important;
-	padding-left: 1rem !important;
-	text-transform: capitalize;
+	padding: 0.5rem 1rem !important;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
 }
 
 .room-text {
@@ -63,12 +71,16 @@ html, body, #root {
 }
 
 .room-output {
-	background-color: black;
-	color: white;
+	background-color: #0f172a;
+	color: #e2e8f0;
 	white-space: pre-wrap;
+	font-family: 'JetBrains Mono', 'Fira Code', monospace;
+	font-size: 0.875rem;
+	padding: 1rem;
+	border-radius: 8px;
 }
 .room-output-error {
-	color: red;
+	color: #fca5a5;
 }
 
 .room-text h4 {
@@ -100,22 +112,22 @@ html, body, #root {
 }
 
 .ide-bottom {
-	background-color: #1a2023;
+	background-color: #0f172a;
 	padding: 1rem !important;
-	color:white;
+	color: white;
 	width:100%;
 }
 .ide-top {
-	background-color: #1a2023;
+	background-color: #0f172a;
 	padding: 0.6rem 1rem !important;
-	color:white;
+	color: white;
 	width:100%;
 }
 
 .ide-top-files {
 	padding: 0 !important;
-	background-color: #1a2023;
-	color:white;
+	background-color: #0f172a;
+	color: white;
 	width:100%;
 }
 
@@ -131,9 +143,11 @@ html, body, #root {
 
 .ide-file-tab {
 	display: inline-block;
-	padding: 0.6rem 1rem !important;
-	background-color: #0f1213;
+	padding: 0.5rem 1rem !important;
+	background-color: #1e293b;
 	cursor: pointer;
+	font-size: 0.8125rem;
+	border-right: 1px solid #334155;
 }
 .ide-file-x {
 	padding-right: 0.3rem !important;
@@ -151,7 +165,7 @@ html, body, #root {
 }
 
 .ide-file-side {
-	background-color: #0f1213;
+	background-color: #0f172a;
 	color: white;
 	position: absolute;
 	height: 100%;
@@ -171,9 +185,10 @@ html, body, #root {
 	padding-left: 1rem;
 	cursor: pointer;
 	flex-grow: 100;
+	font-size: 0.875rem;
 }
 .ide-file-sidefile:hover {
-	background-color: #263238;
+	background-color: #334155;
 }
 
 .ide-file-sidefile-context {
@@ -204,8 +219,17 @@ html, body, #root {
 	z-index: 15 !important; 
 }
 
+.room-wrapper {
+    background-color: #f8fafc;
+}
+
 .progress-container .progress {
-	height: 5px !important;
+	height: 6px !important;
+	border-radius: 3px;
+}
+
+.progress-container .progress-bar {
+	background-color: #6366f1;
 }
 
 .file-list-icon {
@@ -224,10 +248,11 @@ html, body, #root {
 	overflow-y: auto;
 }
 .file-list-row {
-	padding: 0.25rem;
+	padding: 0.5rem;
+	border-bottom: 1px solid #f1f5f9;
 }
 .file-list-row:nth-child(even) {
-	background-color: #EEEEEE;
+	background-color: #f8fafc;
 }
 
 .room-text > pre {
@@ -240,14 +265,11 @@ p, span, h1, h2, h3, h4, h5, h6 {
 }
 
 .navbar {
-    height: 4rem !important;
+    height: 64px !important;
     z-index: 2;
 }
 .below-navbar {
-    height: calc(100% - 4rem) !important;
-}
-.room-wrapper {
-    background-color: #1d2d6b;
+    height: calc(100% - 64px) !important;
 }
 
 .room-content {
@@ -316,24 +338,38 @@ div.vw-100 > div.room-text > .section-embed {
     max-width: 75%;
 }
 
-/* https://codepen.io/GhostRider/pen/GHaFw */
-::-webkit-scrollbar-track
-{
-  -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
-  background-color: #F5F5F5;
+::-webkit-scrollbar-track {
+  background-color: #f1f5f9;
 }
 
-::-webkit-scrollbar
-{
-  width: 10px;
-  background-color: #F5F5F5;
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background-color: #f1f5f9;
 }
 
-::-webkit-scrollbar-thumb
-{
-  background-color: #4568dc;
-  background-image: -webkit-gradient(to left, 0 0, 0 100%,
-                     color-stop(.5, rgba(255, 255, 255, .2)),
-             color-stop(.5, transparent), to(transparent));
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.section-nucleo-icons .icons-container img {
+	max-width: 100%;
+	height: auto;
+}
+
+.main .title {
+	font-size: 1.75rem;
+	font-weight: 700;
+}
+
+.main .description {
+	font-size: 1.05rem;
+	line-height: 1.7;
+	color: #64748b;
 }
 

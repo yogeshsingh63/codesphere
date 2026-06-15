@@ -1,17 +1,13 @@
 import React from "react";
-import asset from "utils/asset.js";
 import { useHistory } from "react-router-dom";
-// reactstrap components
 import {
   Container,
   Col
 } from "reactstrap";
 
-// core components
 import Navbar from "components/Navbars/Navbar.js";
-import TransparentFooter from "components/Footers/TransparentFooter.js";
 
-import Login from "components/Form/Login.js";
+import LoginForm from "components/Form/Login.js";
 
 import { useAuthState } from "context/auth.js";
 
@@ -40,21 +36,18 @@ function LoginPage() {
   return (
     <>
       <Navbar />
-      <div className="page-header clear-filter" filter-color="blue">
-        <div
-          className="page-header-image"
-          style={{
-            backgroundImage: "url(" + asset("assets/img/login.jpg") + ")",
-          }}
-        ></div>
-        <div className="content">
-          <Container>
-            <Col className="ml-auto mr-auto" md="4">
-              <Login />
-            </Col>
-          </Container>
-        </div>
-        <TransparentFooter />
+      <div className="page-header" style={{
+        minHeight: '100vh',
+        background: '#f8fafc',
+        display: 'flex',
+        alignItems: 'center',
+        paddingTop: '64px'
+      }}>
+        <Container>
+          <Col className="ml-auto mr-auto" md="5" lg="4">
+            <LoginForm />
+          </Col>
+        </Container>
       </div>
     </>
   );

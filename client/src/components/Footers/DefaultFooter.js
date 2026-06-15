@@ -1,31 +1,23 @@
-/*eslint-disable*/
 import React from "react";
 
-// reactstrap components
 import { Container, Row, Col } from "reactstrap";
-
-// core components
-
-import { Link } from "react-router-dom";
 
 function DefaultFooter() {
   return (
-    <>
-      <footer className="footer footer-default">
-        <Container>
-          <Row>
-            <Col>
-                <a target="_blank" rel="noopener noreferrer" href="https://github.com/yogeshsingh63/CodeSphere"><i className="fab fa-github text-black"></i></a>
-            </Col>
-            <Col className="copyright text-right" id="copyright">
-              © {new Date().getFullYear()}, designed by{" "}
-              <a target="_blank" rel="noopener noreferrer" href="#">Yogesh</a>
-              {" "}with ❤. 
-            </Col>
-          </Row>
-        </Container>
-      </footer>
-    </>
+    <footer className="footer footer-default">
+      <Container>
+        <Row className="align-items-center">
+          <Col>
+            <a target="_blank" rel="noopener noreferrer" href="https://github.com/yogeshsingh63/CodeSphere">
+              <i className="fab fa-github" style={{ color: '#64748b', fontSize: '1.25rem' }}></i>
+            </a>
+          </Col>
+          <Col className="copyright text-right" id="copyright">
+            © {new Date().getFullYear()} CodeSphere
+          </Col>
+        </Row>
+      </Container>
+    </footer>
   );
 }
 
