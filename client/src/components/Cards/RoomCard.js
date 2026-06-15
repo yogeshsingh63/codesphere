@@ -1,65 +1,76 @@
 import React from "react";
-
-import {
-  Button,
-  Card,
-  CardBody,
-  CardTitle,
-  CardText,
-  Progress 
-} from "reactstrap";
-
 import { Link } from "react-router-dom";
 
 function RoomCard({ title, desc, completed, buttons = [] }) {
-  let progress;
-  if(completed) {
-    progress = (completed.sections.length/completed.room.sections.length)*100;
+  let progress = 0;
+  if (completed && completed.room && completed.room.sections) {
+    progress = (completed.sections.length / completed.room.sections.length) * 100;
   }
+
   return (
-    <Card className="room-card mr-3 mb-3" style={{ width: '20rem', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-      <CardBody>
-        <CardTitle tag="h4" style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '8px' }}>
-          {title} {completed && progress === 100 && <i className="fas fa-check-circle text-success ms-2" style={{ marginLeft: '8px' }}></i>}
-        </CardTitle>
-        <CardText style={{ color: '#64748b', fontSize: '0.875rem', lineHeight: 1.6 }}>
-          {desc}
-        </CardText>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {buttons && buttons.map((button, i) => {
-            return button.to ? (
-              <Button
-                key={i}
-                color={button.color || "primary"}
-                size="sm"
-                onClick={e => {button.onClick && button.onClick(title)} }
-                tag={Link}
-                to={button.to}
-              >
-                {button.text}
-              </Button>
-            ) : (
-              <Button
-                key={i}
-                color={button.color || "primary"}
-                size="sm"
-                onClick={e => {button.onClick && button.onClick(title)} }
-              >
-                {button.text}
-              </Button>
-            )
-          })}
+    <div className="group bg-white border border-stone-200 rounded-2xl p-6 flex flex-col justify-between min-h-[180px] shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out">
+      <div>
+        <div className="flex justify-between items-start gap-4 mb-2">
+          <h4 className="text-stone-900 text-base font-semibold tracking-tight leading-snug group-hover:text-orange-700 transition-colors">
+            {title}
+          </h4>
+          {completed && progress === 100 && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200 shrink-0">
+              <i className="fas fa-check-circle"></i> Done
+            </span>
+          )}
         </div>
+        <p className="text-stone-500 text-xs leading-relaxed mb-6">
+          {desc}
+        </p>
+      </div>
+
+      <div className="space-y-4">
         {completed && (
-          <div className="progress-container mt-3">
-            <Progress max="100" value={progress} style={{ height: '6px', borderRadius: '3px' }}>
-              <span className="progress-value" style={{ fontSize: '0.75rem', color: '#64748b' }}>{parseInt(progress) || 0}%</span>
-            </Progress>
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center text-[10px] font-medium text-stone-400">
+              <span>Progress</span>
+              <span>{parseInt(progress) || 0}%</span>
+            </div>
+            <div className="h-1.5 w-full bg-stone-100 rounded-full overflow-hidden">
+              <div
+                className="bg-orange-700 h-full rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
         )}
-      </CardBody>
-    </Card>
-  )
+
+        <div className="flex flex-wrap gap-2">
+          {buttons && buttons.map((button, i) => {
+            const isDanger = button.color === "danger";
+            const btnClass = isDanger
+              ? "px-3 py-1.5 border border-stone-200 text-stone-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 rounded-lg text-[11px] font-semibold transition-all"
+              : "px-3.5 py-1.5 bg-stone-900 text-white hover:bg-orange-700 rounded-lg text-[11px] font-semibold transition-all shadow-xs";
+
+            return button.to ? (
+              <Link
+                key={i}
+                to={button.to}
+                onClick={e => button.onClick && button.onClick(title)}
+                className={btnClass}
+              >
+                {button.text}
+              </Link>
+            ) : (
+              <button
+                key={i}
+                onClick={e => button.onClick && button.onClick(title)}
+                className={btnClass}
+              >
+                {button.text}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default RoomCard;
