@@ -94,16 +94,20 @@ function HomePage() {
         <InputModal open={setJoinModal} isOpen={joinModal} submit={join} title="Join Room" body="Enter room code below:" button="Join" />
         <MessageModal open={setMessageModal} isOpen={messageModal} title="Join Room" body={message} />
         <ProfilePageHeader />
-        <div className="section">
+        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
           <Container>
-            <h3 className="title">Enrolled Rooms</h3>
+            <h3 className="title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <i className="fas fa-graduation-cap" style={{ color: '#6366f1' }}></i> Enrolled Rooms
+            </h3>
             <Row>
               {enrolled && enrolled.map((room, i) => <RoomCard key={i} completed={getCompleted(room)} {...room} buttons={[{to: "/rooms/view/" + room.code, text: "Open"}]} />)}
               <RoomCard title="Join Room" desc="Join a new room here by entering its room code." buttons={[{onClick: () => {setJoinModal(true)}, text: "Join +"}]} />
             </Row>
           </Container>
           <Container>
-            <h3 className="title">Created Rooms</h3>
+            <h3 className="title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginTop: '48px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <i className="fas fa-tools" style={{ color: '#6366f1' }}></i> Created Rooms
+            </h3>
             <Row>
               {created && created.map((room, i) => <RoomCard key={i} completed={getCompleted(room)} {...room} buttons={[
                 {to: "/rooms/view/" + room.code, text: "Open"},
