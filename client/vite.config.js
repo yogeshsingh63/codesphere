@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
       preprocessorOptions: {
         scss: {
           api: "legacy",
-          silenceDeprecations: ["import", "color-functions", "slash-div"],
+          silenceDeprecations: ["slash-div", "mixed-decls"],
         },
       },
     },

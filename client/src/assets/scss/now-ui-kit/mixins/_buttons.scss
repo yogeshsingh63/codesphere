@@ -1,8 +1,11 @@
 // Mixin for generating new styles
 @mixin btn-styles($btn-color, $btn-states-color) {
     background-color: $btn-color;
-
-
+    @if $btn-color == $white-color {
+        color: $primary-color;
+    } @else {
+        color: $white-color;
+    }
 
     &:hover,
     &:focus,
@@ -41,9 +44,6 @@
 
     // btn-neutral style
     @if $btn-color == $white-color{
-        color: $primary-color;
-
-
         &.btn-danger{
             color: $danger-color;
 
@@ -129,9 +129,6 @@
             }
 
         }
-
-    } @else {
-        color: $white-color;
     }
 
     &.btn-simple{
