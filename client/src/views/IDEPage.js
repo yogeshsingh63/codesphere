@@ -1,9 +1,4 @@
 import React from "react";
-// reactstrap components
-import {
-  Row
-} from "reactstrap";
-
 import { useLocation, useHistory } from "react-router-dom";
 
 import { useAuthState } from "context/auth.js";
@@ -82,9 +77,9 @@ function IDEPage() {
   }
   
   return (
-    <div className="room-wrapper">
+    <div className="room-wrapper h-screen flex flex-col">
       <Navbar transparent={false} fixed={false} className="mb-0" innerRef={navbarRef} />
-      <Row className="p-0 m-0 h-100">
+      <div className="p-0 m-0 flex-1">
         <IDE
           size="full"
           useFileStorage={true}
@@ -94,9 +89,10 @@ function IDEPage() {
           base={base}
           onSave={saveFiles}
         />
-      </Row>
+      </div>
     </div>
   );
 }
 
 export default IDEPage;
+

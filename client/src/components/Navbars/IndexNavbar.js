@@ -1,84 +1,72 @@
 import React from "react";
-import {
-  Collapse,
-  NavbarBrand,
-  Navbar,
-  NavItem,
-  NavLink,
-  Nav,
-  Container,
-  Button
-} from "reactstrap";
+import { Link, NavLink as RRNavLink } from "react-router-dom";
 
-import { NavLink as RRNavLink, Link } from 'react-router-dom';
-
-function IndexNavbar({ transparent = true, fixed = true, innerRef, className }) {
-  const [scrolled, setScrolled] = React.useState(false);
-  const [collapseOpen, setCollapseOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const navClasses = [
-    fixed ? "fixed-top" : "",
-    transparent && !scrolled ? "navbar-transparent" : "",
-    className || ""
-  ].filter(Boolean).join(" ");
+function IndexNavbar() {
+  const [isOpen, setIsOpen] = React.useState(false);
 
   return (
-    <>
-      {collapseOpen && (
-        <div
-          id="bodyClick"
-          onClick={() => {
-            document.documentElement.classList.toggle("nav-open");
-            setCollapseOpen(false);
-          }}
-        />
-      )}
-      <Navbar className={navClasses} expand="lg" color="white">
-        <Container>
-          <NavbarBrand tag={RRNavLink} to="/" id="navbar-brand">
-            <i className="fas fa-code me-2" style={{ marginRight: '8px', color: '#c2410c' }}></i>
-            CodeSphere
-          </NavbarBrand>
-          <button
-            className="navbar-toggler"
-            onClick={() => {
-              document.documentElement.classList.toggle("nav-open");
-              setCollapseOpen(!collapseOpen);
-            }}
-            aria-expanded={collapseOpen}
-            type="button"
+    <nav className="fixed top-0 left-0 right-0 h-16 z-50 backdrop-blur-md bg-stone-50/80 border-b border-stone-200/50 flex items-center transition-all duration-300">
+      <div className="container mx-auto px-6 flex items-center justify-between">
+        {/* Brand */}
+        <Link to="/" className="flex items-center gap-2 text-stone-900 font-bold text-lg hover:opacity-90 transition-opacity">
+          <i className="fas fa-code" style={{ color: '#c2410c' }}></i>
+          <span>CodeSphere</span>
+        </Link>
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex items-center gap-6">
+          <RRNavLink
+            exact
+            to="/register"
+            className="text-stone-600 hover:text-stone-900 font-medium transition-colors text-sm"
+            activeClassName="text-stone-900"
           >
-            <span className="navbar-toggler-bar top-bar"></span>
-            <span className="navbar-toggler-bar middle-bar"></span>
-            <span className="navbar-toggler-bar bottom-bar"></span>
-          </button>
-          <Collapse className="justify-content-end" isOpen={collapseOpen} navbar>
-            <Nav navbar>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/register">
-                  Register
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <Button tag={Link} to="/login" color="primary" size="sm" className="ms-2" style={{ marginLeft: '8px' }}>
-                  <i className="fas fa-sign-in-alt me-1" style={{ marginRight: '6px' }}></i>
-                  Login
-                </Button>
-              </NavItem>
-            </Nav>
-          </Collapse>
-        </Container>
-      </Navbar>
-    </>
+            Register
+          </RRNavLink>
+          <Link
+            to="/login"
+            className="flex items-center gap-2 bg-[#c2410c] hover:bg-[#a13207] text-white px-4 py-2 rounded-lg text-sm font-semibold shadow-sm transition-all hover:shadow-md"
+          >
+            <i className="fas fa-sign-in-alt text-xs"></i>
+            <span>Login</span>
+          </Link>
+        </div>
+
+        {/* Mobile menu button */}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          type="button"
+          className="md:hidden text-stone-600 hover:text-stone-900 focus:outline-none p-2"
+          aria-label="Toggle Menu"
+        >
+          <i className={`fas ${isOpen ? "fa-times" : "fa-bars"} text-xl`}></i>
+        </button>
+      </div>
+
+      {/* Mobile Navigation Dropdown */}
+      {isOpen && (
+        <div className="absolute top-16 left-0 right-0 bg-stone-50 border-b border-stone-200/50 p-6 flex flex-col gap-4 shadow-lg md:hidden animate-fade-in">
+          <RRNavLink
+            exact
+            to="/register"
+            onClick={() => setIsOpen(false)}
+            className="text-stone-600 hover:text-stone-900 font-medium py-2 border-b border-stone-100 transition-colors text-base"
+            activeClassName="text-stone-900"
+          >
+            Register
+          </RRNavLink>
+          <Link
+            to="/login"
+            onClick={() => setIsOpen(false)}
+            className="flex items-center justify-center gap-2 bg-[#c2410c] hover:bg-[#a13207] text-white py-3 rounded-lg text-base font-semibold shadow-sm transition-all"
+          >
+            <i className="fas fa-sign-in-alt"></i>
+            <span>Login</span>
+          </Link>
+        </div>
+      )}
+    </nav>
   );
 }
 
-export default IndexNavbar;
+export default IndexNavbar;

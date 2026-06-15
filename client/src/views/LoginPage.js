@@ -1,9 +1,5 @@
 import React from "react";
 import { useHistory } from "react-router-dom";
-import {
-  Container,
-  Col
-} from "reactstrap";
 
 import Navbar from "components/Navbars/Navbar.js";
 import LoginForm from "components/Form/Login.js";
@@ -35,20 +31,24 @@ function LoginPage() {
   return (
     <>
       <Navbar />
-      <div className="page-header relative flex items-center min-h-screen py-24" style={{
-        backgroundImage: "url(" + asset("assets/img/modern_bg_abstract.png") + ")",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center'
-      }}>
-        <div className="absolute inset-0 bg-stone-900/10 pointer-events-none" />
-        <Container className="relative z-10">
-          <Col className="ml-auto mr-auto" md="6" lg="5" xl="4">
+      <div 
+        className="page-header relative flex items-center justify-center min-h-screen py-24 bg-stone-50"
+        style={{
+          backgroundImage: "url(" + asset("assets/img/modern_bg_abstract.png") + ")",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }}
+      >
+        <div className="absolute inset-0 bg-stone-900/5 pointer-events-none" />
+        <div className="container mx-auto px-6 relative z-10 flex justify-center">
+          <div className="w-full max-w-md">
             <LoginForm />
-          </Col>
-        </Container>
+          </div>
+        </div>
       </div>
     </>
   );
 }
 
 export default LoginPage;
+

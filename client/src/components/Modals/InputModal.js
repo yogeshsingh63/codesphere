@@ -1,24 +1,13 @@
 import React from "react";
-// reactstrap components
-import { 
-  Input,
-  Button,
-  Modal,
-  Form,
-  FormGroup
-} from "reactstrap";
-// core components
 
-function InputModal({open, isOpen, submit, title="Input Data", body="Enter data below:", type="text", button="Save", reset=true, value="", inputOptions={}}){
+function InputModal({ open, isOpen, submit, title = "Input Data", body = "Enter data below:", type = "text", button = "Save", reset = true, value = "", inputOptions = {} }) {
   const [data, setData] = React.useState(value);
   const [inputEle, setInputEle] = React.useState(null);
 
   const finish = () => {
     submit(data);
     open(false);
-
-    if(reset)
-      setData("");
+    if (reset) setData("");
   };
 
   const onSubmit = (e) => {
@@ -31,63 +20,68 @@ function InputModal({open, isOpen, submit, title="Input Data", body="Enter data 
   }, []);
 
   React.useEffect(() => {
-    if(isOpen && inputEle) {
+    if (isOpen && inputEle) {
       inputEle.focus();
     }
   }, [isOpen, inputEle]);
 
+  if (!isOpen) return null;
+
   return (
-    <>
-      <Modal toggle={() => open(false)} isOpen={isOpen}>
-        <div className="modal-header">
-          <h5 className="modal-title">
+    <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-stone-200/60 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <h5 className="text-base font-bold text-stone-900">
             {title}
           </h5>
           <button
-            aria-label="Close"
-            className="close"
-            type="button"
             onClick={() => open(false)}
+            type="button"
+            className="text-stone-400 hover:text-stone-600 transition-colors w-8 h-8 rounded-lg flex items-center justify-center hover:bg-stone-50"
+            aria-label="Close"
           >
-            <span aria-hidden={true}>×</span>
+            <i className="fas fa-times text-sm"></i>
           </button>
         </div>
-        <div className="modal-body">
-          {body && <p>{body}</p>}
-          <Form onSubmit={onSubmit}>
-            <FormGroup>
-              <Input
-                type={type}
-                value={data || value}
-                onChange={e => setData(e.target.value)}
-                innerRef={inputRef}
-                {...inputOptions}
-              ></Input>
-            </FormGroup>
-          </Form>
+
+        {/* Body */}
+        <div className="px-6 py-6 flex flex-col gap-4">
+          {body && <p className="text-stone-600 text-sm">{body}</p>}
+          <form onSubmit={onSubmit}>
+            <input
+              type={type}
+              value={data || value}
+              onChange={e => setData(e.target.value)}
+              ref={inputRef}
+              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm text-stone-900 bg-stone-50/50"
+              {...inputOptions}
+            />
+          </form>
         </div>
-        <div className="modal-footer justify-content-end">
-          {submit && (
-            <Button
-              color="info"
-              type="button"
-              onClick={finish}
-              className="mr-2"
-            >
-              {button}
-            </Button>
-          )}
-          <Button
-            color="danger"
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-6 py-4 bg-stone-50 border-t border-stone-100">
+          <button
             type="button"
             onClick={() => open(false)}
+            className="px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-100/60 rounded-xl text-xs font-semibold transition-all"
           >
-            Close
-          </Button>
+            Cancel
+          </button>
+          {submit && (
+            <button
+              type="button"
+              onClick={finish}
+              className="px-4 py-2 bg-[#c2410c] hover:bg-[#a13207] text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
+            >
+              {button}
+            </button>
+          )}
         </div>
-      </Modal>
-    </>
+      </div>
+    </div>
   );
 }
 
-export default InputModal;
+export default InputModal;

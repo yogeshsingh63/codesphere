@@ -1,48 +1,49 @@
 import React from "react";
-// reactstrap components
-import { 
-  Button,
-  Modal,
-} from "reactstrap";
-// core components
 
-function MessageModal({open, isOpen, title, body, submit}){
+function MessageModal({ open, isOpen, title, body, submit }) {
   const finish = () => {
-    if(submit)
-      submit();
+    if (submit) submit();
     open(false);
   };
+
+  if (!isOpen) return null;
+
   return (
-    <>
-      <Modal toggle={() => open(false)} isOpen={isOpen}>
-        <div className="modal-header">
-          <h5 className="modal-title">
-            {title ? title : "Success"}
+    <div className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white border border-stone-200/60 rounded-3xl max-w-md w-full shadow-2xl overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+          <h5 className="text-base font-bold text-stone-900">
+            {title ? title : "Notification"}
           </h5>
           <button
-            aria-label="Close"
-            className="close"
-            type="button"
             onClick={() => open(false)}
+            type="button"
+            className="text-stone-400 hover:text-stone-600 transition-colors w-8 h-8 rounded-lg flex items-center justify-center hover:bg-stone-50"
+            aria-label="Close"
           >
-            <span aria-hidden={true}>×</span>
+            <i className="fas fa-times text-sm"></i>
           </button>
         </div>
-        <div className="modal-body">
-          <p>{body}</p>
+
+        {/* Body */}
+        <div className="px-6 py-6">
+          <p className="text-stone-600 text-sm leading-relaxed">{body}</p>
         </div>
-        <div className="modal-footer justify-content-end">
-          <Button
-            color="danger"
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-6 py-4 bg-stone-50 border-t border-stone-100">
+          <button
             type="button"
             onClick={finish}
+            className="px-4 py-2 bg-stone-900 hover:bg-stone-850 text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
           >
             Close
-          </Button>
+          </button>
         </div>
-      </Modal>
-    </>
+      </div>
+    </div>
   );
 }
 
-export default MessageModal;
+export default MessageModal;

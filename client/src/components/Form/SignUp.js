@@ -1,20 +1,5 @@
 import React from "react";
 import Cookies from 'universal-cookie';
-
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardBody,
-  CardFooter,
-  CardTitle,
-  Form,
-  Input,
-  FormGroup,
-  Label,
-  Alert
-} from "reactstrap";
-
 import fetch from "utils/fetch.js";
 
 function SignUpForm() {
@@ -100,104 +85,135 @@ function SignUpForm() {
   const strengthColors = { weak: '#be123c', okay: '#b45309', strong: '#15803d' };
 
   return (
-    <Card style={{ border: '1px solid rgba(255, 255, 255, 0.45)', borderRadius: '24px', boxShadow: '0 12px 40px rgba(28, 25, 23, 0.08)', background: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-      <CardHeader className="text-center" style={{ background: 'transparent', borderBottom: 'none', padding: '32px 24px 0' }}>
-        <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid #fed7aa' }}>
-          <i className="fas fa-code" style={{ color: '#c2410c', fontSize: '24px' }}></i>
+    <div className="bg-white/75 backdrop-blur-xl border border-stone-200/50 rounded-3xl shadow-xl flex flex-col overflow-hidden max-w-sm w-full mx-auto">
+      {/* Header */}
+      <div className="text-center px-8 pt-8 pb-4">
+        <div className="w-14 h-14 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-4">
+          <i className="fas fa-code text-[#c2410c] text-xl"></i>
         </div>
-        <CardTitle tag="h3" style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#1c1917' }}>
+        <h3 className="text-xl font-bold text-stone-900 tracking-tight">
           Create account
-        </CardTitle>
-        <p style={{ color: '#78716c', fontSize: '0.875rem', marginTop: '8px' }}>
+        </h3>
+        <p className="text-stone-500 text-xs mt-1.5 leading-relaxed">
           Collaborate on code, quizzes, and projects in real-time
         </p>
+
         {error && (
-          <Alert color="danger" style={{ fontSize: '0.8125rem', padding: '10px 14px', borderRadius: '8px' }}>
-            {error}
-          </Alert>
+          <div className="mt-4 p-3 bg-red-50 text-red-650 text-xs font-medium rounded-xl border border-red-100 text-left flex items-start gap-2">
+            <i className="fas fa-exclamation-circle mt-0.5"></i>
+            <span>{error}</span>
+          </div>
         )}
-      </CardHeader>
-      <CardBody style={{ padding: '24px' }}>
-        <Form onSubmit={submitForm}>
-          <FormGroup className="mb-3">
-            <Label for="username" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Username</Label>
-            <Input
-              id="username"
-              placeholder="Choose a username"
-              type="text"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-              required
-              minLength={6}
-              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
-            />
-          </FormGroup>
-          <FormGroup className="mb-3">
-            <Label for="email" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Email</Label>
-            <Input
-              id="email"
-              placeholder="Enter your email"
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
-            />
-          </FormGroup>
-          <FormGroup className="mb-3">
-            <Label for="password" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Password</Label>
-            <Input
-              id="password"
-              placeholder="Create a password"
-              type="password"
-              value={password}
-              onChange={e => { setPassword(e.target.value); scorePassword(e.target.value) } }
-              required
-              minLength={8}
-              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
-            />
-            {password && (
-              <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: '#e7e5e4', overflow: 'hidden' }}>
-                  <div style={{ width: passStrength[1] === 'weak' ? '33%' : passStrength[1] === 'okay' ? '66%' : '100%', height: '100%', background: strengthColors[passStrength[1]], borderRadius: '2px', transition: 'all 0.3s' }} />
-                </div>
-                <span style={{ fontSize: '0.75rem', color: strengthColors[passStrength[1]], fontWeight: 600, textTransform: 'capitalize' }}>
-                  {passStrength[1]}
-                </span>
+      </div>
+
+      {/* Body */}
+      <form onSubmit={submitForm} className="px-8 pb-6 flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="username" className="text-xs font-semibold text-stone-700">
+            Username
+          </label>
+          <input
+            id="username"
+            placeholder="Choose a username"
+            type="text"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            required
+            minLength={6}
+            className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-white/50 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm text-stone-900 transition-all placeholder:text-stone-400"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-xs font-semibold text-stone-700">
+            Email
+          </label>
+          <input
+            id="email"
+            placeholder="Enter your email"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-white/50 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm text-stone-900 transition-all placeholder:text-stone-400"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-xs font-semibold text-stone-700">
+            Password
+          </label>
+          <input
+            id="password"
+            placeholder="Create a password"
+            type="password"
+            value={password}
+            onChange={e => { setPassword(e.target.value); scorePassword(e.target.value) } }
+            required
+            minLength={8}
+            className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-white/50 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm text-stone-900 transition-all placeholder:text-stone-400"
+          />
+          {password && (
+            <div className="mt-1.5 flex items-center gap-2">
+              <div className="flex-1 h-1 bg-stone-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full transition-all duration-350" 
+                  style={{ 
+                    width: passStrength[1] === 'weak' ? '33%' : passStrength[1] === 'okay' ? '66%' : '100%', 
+                    backgroundColor: strengthColors[passStrength[1]] 
+                  }} 
+                />
               </div>
-            )}
-          </FormGroup>
-          <FormGroup className="mb-3">
-            <Label for="verify-password" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Confirm Password</Label>
-            <Input
-              id="verify-password"
-              placeholder="Confirm your password"
-              type="password"
-              value={verifyPassword}
-              onChange={e => setVerifyPassword(e.target.value)}
-              required
-              minLength={8}
-              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
-            />
-          </FormGroup>
-          <Button
-            color="primary"
-            type="submit"
-            block
-            size="lg"
-            disabled={disabled}
-            style={{ fontWeight: 600, borderRadius: '10px', marginTop: '8px', background: '#c2410c', borderColor: '#c2410c' }}
-          >
-            {disabled ? 'Creating account...' : 'Create Account'}
-          </Button>
-        </Form>
-      </CardBody>
-      <CardFooter className="text-center" style={{ background: 'transparent', borderTop: '1px solid #f5f5f4', padding: '16px 24px' }}>
-        <p style={{ fontSize: '0.8125rem', color: '#78716c', margin: 0 }}>
-          Already have an account? <a href="/login" style={{ color: '#c2410c', fontWeight: 600 }}>Sign in</a>
+              <span 
+                className="text-[10px] font-bold capitalize"
+                style={{ color: strengthColors[passStrength[1]] }}
+              >
+                {passStrength[1]}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="verify-password" className="text-xs font-semibold text-stone-700">
+            Confirm Password
+          </label>
+          <input
+            id="verify-password"
+            placeholder="Confirm your password"
+            type="password"
+            value={verifyPassword}
+            onChange={e => setVerifyPassword(e.target.value)}
+            required
+            minLength={8}
+            className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-white/50 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm text-stone-900 transition-all placeholder:text-stone-400"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={disabled}
+          className="w-full bg-[#c2410c] hover:bg-[#a13207] disabled:opacity-50 text-white font-semibold py-3 rounded-xl mt-2 transition-all shadow-sm flex items-center justify-center gap-2"
+        >
+          {disabled ? (
+            <>
+              <i className="fas fa-spinner animate-spin"></i>
+              <span>Creating account...</span>
+            </>
+          ) : (
+            <span>Create Account</span>
+          )}
+        </button>
+      </form>
+
+      {/* Footer */}
+      <div className="bg-stone-50 border-t border-stone-100 text-center py-4 px-8">
+        <p className="text-xs text-stone-500">
+          Already have an account? <a href="/login" className="text-[#c2410c] font-semibold hover:underline">Sign in</a>
         </p>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 export default SignUpForm;
+

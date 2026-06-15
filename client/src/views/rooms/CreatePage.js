@@ -1,16 +1,5 @@
 import React from "react";
 import { Link, useParams, useLocation, useHistory } from "react-router-dom";
-// reactstrap components
-import {
-  Button,
-  Container,
-  Row,
-  Col,
-  Input,
-  Form,
-  FormGroup,
-  Label
-} from "reactstrap";
 import { sortableContainer, sortableElement } from 'react-sortable-hoc';
 
 import fetch from "utils/fetch.js";
@@ -24,7 +13,6 @@ import ProfilePageHeader from "components/Headers/ProfilePageHeader.js";
 import DefaultFooter from "components/Footers/DefaultFooter.js";
 
 import SectionCard from "components/Cards/SectionCard.js";
-
 import PaginatedTable from "components/Form/PaginatedTable.js";
 
 import EditSection from "components/Modals/EditSection.js";
@@ -210,117 +198,151 @@ function CreatePage() {
   return (
     <>
       <AuthNavbar />
-      <div className="wrapper">
+      <div className="wrapper bg-[#faf9f6] min-h-screen pt-16 flex flex-col justify-between">
         <EditSection open={setEditModal} isOpen={editModal} section={sectionRef.current} submit={finishSection} key={sectionRef.current.title} />
         <ExportModal open={setExportModal} isOpen={exportModal} data={JSON.stringify({title, desc, sections: sectionsRef.current, "public": isPublic}, null, " ".repeat(4))} />
         <ImportModal open={setImportModal} isOpen={importModal} submit={finishImport} />
 
-        <ProfilePageHeader />
-        <div className="section" style={{ background: '#faf9f6', padding: '48px 0', minHeight: 'calc(100vh - 220px - 64px)' }}>
-          <Container>
-            <h3 className="title" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
-              Room {isEditing ? "Editor": "Creator"}
-            </h3>
-            {isEditing && <h5 style={{ fontSize: '0.925rem', color: '#64748b', marginBottom: '24px' }}>Room Code: <strong style={{ color: '#6366f1' }}>{code}</strong></h5>}
-            
-            <h4 className="title" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginBottom: '16px' }}>Room Details</h4>
-            <Card style={{ border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.06)', marginBottom: '24px' }}>
-              <CardBody style={{ padding: '28px' }}>
-                <Row>
-                  <Col>
-                    <Form>
-                      <FormGroup>
-                        <label htmlFor="title-input" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Room Title</label>
-                        <Input
-                          placeholder="Enter title"
-                          type="text"
-                          id="title-input"
-                          value={title}
-                          onChange={e => setTitle(e.target.value)}
-                          style={{ borderRadius: '8px' }}
-                        />
-                      </FormGroup>
-                      <FormGroup>
-                        <label htmlFor="desc-input" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Description</label>
-                        <Input
-                          placeholder="Enter description"
-                          type="text"
-                          id="desc-input"
-                          value={desc}
-                          onChange={e => setDesc(e.target.value)}
-                          style={{ borderRadius: '8px' }}
-                        />
-                      </FormGroup>
-                      <FormGroup check className="pl-0" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Label check style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>
-                          <Input
-                            type="checkbox"
-                            checked={isPublic}
-                            onChange={e => setPublic(e.target.checked)}
-                            style={{ position: 'static', margin: 0, width: '16px', height: '16px', borderRadius: '4px' }}
-                          />
-                          Public Room
-                        </Label>
-                      </FormGroup>
-                    </Form>
-                  </Col>
-                </Row>
-              </CardBody>
-            </Card>
-
-            <h4 className="title" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginTop: '36px', marginBottom: '16px' }}>Sections</h4>
-            <Row style={{ gap: '16px', paddingLeft: '15px' }}>
-              <SortableContainer onSortEnd={onSortEnd} axis="x">
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-                  {sections.map((value, index) => (
-                    <SortableItem key={index} index={index} value={fixupSection(value)} />
-                  ))}
+        <div>
+          <ProfilePageHeader />
+          <div className="py-12">
+            <div className="container mx-auto px-6 max-w-4xl">
+              <h3 className="text-xl font-bold text-stone-900 mb-2 flex items-center gap-2">
+                <i className="fas fa-tools text-[#c2410c]"></i>
+                <span>Room {isEditing ? "Editor": "Creator"}</span>
+              </h3>
+              {isEditing && (
+                <p className="text-xs text-stone-500 mb-6 font-medium">
+                  Room Code: <strong className="text-[#c2410c]">{code}</strong>
+                </p>
+              )}
+              
+              <h4 className="text-sm font-bold text-stone-800 mb-4 tracking-tight">Room Details</h4>
+              <div className="bg-white border border-stone-200/60 rounded-3xl p-6 shadow-sm mb-8">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="title-input" className="text-xs font-semibold text-stone-700">Room Title</label>
+                    <input
+                      placeholder="Enter title"
+                      type="text"
+                      id="title-input"
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm bg-stone-50/50 text-stone-900 transition-all"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="desc-input" className="text-xs font-semibold text-stone-700">Description</label>
+                    <input
+                      placeholder="Enter description"
+                      type="text"
+                      id="desc-input"
+                      value={desc}
+                      onChange={e => setDesc(e.target.value)}
+                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm bg-stone-50/50 text-stone-900 transition-all"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-stone-700">
+                      <input
+                        type="checkbox"
+                        checked={isPublic}
+                        onChange={e => setPublic(e.target.checked)}
+                        className="w-4 h-4 rounded border-stone-300 text-[#c2410c] focus:ring-[#c2410c]"
+                      />
+                      <span>Public Room</span>
+                    </label>
+                  </div>
                 </div>
-              </SortableContainer>
-              <SectionCard title="Create Section" desc="Create a new section here." button="Create +" onClick={() => setInputOptions({title: "Enter Section Title:", body: "", submit: createSection})}/>
-            </Row>
+              </div>
 
-            {(isEditing && members && members.length > 0) && (
-              <>
-                <h4 className="title" style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1e293b', marginTop: '36px', marginBottom: '8px' }}>Members</h4>
-                <h5 style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '16px' }}>Total enrolled: {members.length} </h5>
-
-                <PaginatedTable
-                  columns={[
-                    {title: "Username", field: "username", formatter: (item) => (
-                      <Link to={"/profile/" + item.username} style={{ color: '#c2410c', fontWeight: 500 }}>{item.username}</Link>
-                    )},
-                    {title: "Completion", field: "completed", formatter: (item) => (
-                      <>{item.completed ? item.completed.length : 0} / {sections.length} sections</>
-                    )}
-                  ]}
-                  items={members}
+              <h4 className="text-sm font-bold text-stone-800 mb-4 tracking-tight">Sections</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
+                <SortableContainer onSortEnd={onSortEnd} axis="xy">
+                  <div className="contents">
+                    {sections.map((value, index) => (
+                      <SortableItem key={index} index={index} value={fixupSection(value)} />
+                    ))}
+                  </div>
+                </SortableContainer>
+                <SectionCard 
+                  title="Create Section" 
+                  desc="Create a new section here." 
+                  button="Create +" 
+                  onClick={() => setInputOptions({title: "Enter Section Title:", body: "", submit: createSection})}
                 />
+              </div>
 
-                <br />
-              </>
-            )}
+              {(isEditing && members && members.length > 0) && (
+                <div className="mt-10">
+                  <h4 className="text-sm font-bold text-stone-800 mb-1 tracking-tight">Members</h4>
+                  <p className="text-xs text-stone-500 mb-4 font-medium">Total enrolled: {members.length} </p>
 
-            <Row style={{ marginTop: '36px', borderTop: '1px solid #e2e8f0', paddingTop: '24px', marginLeft: 0, marginRight: 0 }}>
-              <Col className="p-0">
-                <Button color="primary" outline type="button" size="sm" onClick={() => history.push("/home")} style={{ fontWeight: 600, borderRadius: '8px' }}>&larr; Back</Button>
-              </Col>
-              <Col className="text-right p-0" style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <Button color="success" type="button" size="sm" onClick={() => setExportModal(true)} style={{ fontWeight: 600, borderRadius: '8px' }}>Export</Button>
-                <Button color="primary" outline type="button" size="sm" onClick={() => setImportModal(true)} style={{ fontWeight: 600, borderRadius: '8px' }}>Import</Button>
-                {isEditing && (
-                  <Button color="danger" type="button" size="sm" onClick={() => setConfirmOptions({
-                      title: "Confirm Deletion",
-                      body: "Are you sure you want to delete this room?",
-                      submit: deleteRoom,
-                      yesColor: "danger",
-                      noColor: "primary"
-                  })} style={{ fontWeight: 600, borderRadius: '8px' }}>Delete</Button>
-                )}
-                <Button color="primary" type="button" size="sm" onClick={saveRoom} style={{ fontWeight: 600, borderRadius: '8px' }}>Save</Button>
-              </Col>
-            </Row>
-          </Container>
+                  <PaginatedTable
+                    columns={[
+                      {title: "Username", field: "username", formatter: (item) => (
+                        <Link to={"/profile/" + item.username} className="text-[#c2410c] hover:underline font-semibold">{item.username}</Link>
+                      )},
+                      {title: "Completion", field: "completed", formatter: (item) => (
+                        <span className="text-xs text-stone-600 font-medium">
+                          {item.completed ? item.completed.length : 0} / {sections.length} sections
+                        </span>
+                      )}
+                    ]}
+                    items={members}
+                  />
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-10 pt-6 border-t border-stone-200/60">
+                <button 
+                  type="button" 
+                  onClick={() => history.push("/home")} 
+                  className="px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-100/60 rounded-xl text-xs font-semibold transition-all self-start sm:self-auto"
+                >
+                  &larr; Back
+                </button>
+                <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">
+                  <button 
+                    type="button" 
+                    onClick={() => setExportModal(true)} 
+                    className="px-4 py-2 bg-stone-900 hover:bg-stone-850 text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
+                  >
+                    Export
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setImportModal(true)} 
+                    className="px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-100/60 rounded-xl text-xs font-semibold transition-all"
+                  >
+                    Import
+                  </button>
+                  {isEditing && (
+                    <button 
+                      type="button" 
+                      onClick={() => setConfirmOptions({
+                        title: "Confirm Deletion",
+                        body: "Are you sure you want to delete this room?",
+                        submit: deleteRoom,
+                        yesColor: "danger",
+                        noColor: "primary"
+                      })} 
+                      className="px-4 py-2 border border-red-200 text-red-650 hover:bg-red-50/50 rounded-xl text-xs font-semibold transition-all"
+                    >
+                      Delete
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={saveRoom} 
+                    className="px-4 py-2 bg-[#c2410c] hover:bg-[#a13207] text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <DefaultFooter />
       </div>
@@ -329,3 +351,4 @@ function CreatePage() {
 }
 
 export default CreatePage;
+
