@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
+    "@tailwindcss/vite": "^4.3.1",
     "codemirror": "^5.65.21",
     "dompurify": "^3.3.0",
     "highlight.js": "^11.11.1",
@@ -19,6 +20,7 @@
     "react-sortable-hoc": "^1.11.0",
     "reactstrap": "8.4.1",
     "sass": "^1.77.8",
+    "tailwindcss": "^4.3.1",
     "universal-cookie": "^8.1.2"
   },
   "scripts": {

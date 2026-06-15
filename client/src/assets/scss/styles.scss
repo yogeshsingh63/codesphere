@@ -1,5 +1,13 @@
+@import "tailwindcss";
+
 .room-card {
-	width: 20rem !important;
+	width: 100% !important;
+	transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.room-card:hover {
+	transform: translateY(-4px);
+	box-shadow: 0 12px 24px rgba(28, 25, 23, 0.08) !important;
+	border-color: #c2410c !important;
 }
 
 .section.sec-md {
@@ -25,8 +33,8 @@ html, body, #root {
 }
 
 body {
-	background-color: #f8fafc;
-	color: #1e293b;
+	background-color: #faf9f6;
+	color: #1c1917;
 }
 
 .room-col-text {
@@ -229,7 +237,7 @@ body {
 }
 
 .progress-container .progress-bar {
-	background-color: #6366f1;
+	background-color: #c2410c;
 }
 
 .file-list-icon {
@@ -371,5 +379,13 @@ div.vw-100 > div.room-text > .section-embed {
 	font-size: 1.05rem;
 	line-height: 1.7;
 	color: #64748b;
+}
+
+.responsive-card-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 24px;
+	width: 100%;
+	margin-bottom: 32px;
 }
 
