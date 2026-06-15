@@ -94,27 +94,27 @@ function HomePage() {
         <InputModal open={setJoinModal} isOpen={joinModal} submit={join} title="Join Room" body="Enter room code below:" button="Join" />
         <MessageModal open={setMessageModal} isOpen={messageModal} title="Join Room" body={message} />
         <ProfilePageHeader />
-        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
+        <div className="section" style={{ background: '#faf9f6', padding: '48px 0', minHeight: 'calc(100vh - 220px - 64px)' }}>
           <Container>
-            <h3 className="title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <i className="fas fa-graduation-cap" style={{ color: '#6366f1' }}></i> Enrolled Rooms
+            <h3 className="title" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#1c1917', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <i className="fas fa-graduation-cap" style={{ color: '#c2410c' }}></i> Enrolled Rooms
             </h3>
-            <Row>
+            <div className="responsive-card-grid">
               {enrolled && enrolled.map((room, i) => <RoomCard key={i} completed={getCompleted(room)} {...room} buttons={[{to: "/rooms/view/" + room.code, text: "Open"}]} />)}
-              <RoomCard title="Join Room" desc="Join a new room here by entering its room code." buttons={[{onClick: () => {setJoinModal(true)}, text: "Join +"}]} />
-            </Row>
+              <RoomCard title="Join Room" desc="Join a new collaborative room here by entering its room code." buttons={[{onClick: () => {setJoinModal(true)}, text: "Join +"}]} />
+            </div>
           </Container>
           <Container>
-            <h3 className="title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginTop: '48px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <i className="fas fa-tools" style={{ color: '#6366f1' }}></i> Created Rooms
+            <h3 className="title" style={{ fontSize: '1.625rem', fontWeight: 800, color: '#1c1917', marginTop: '48px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <i className="fas fa-tools" style={{ color: '#c2410c' }}></i> Created Rooms
             </h3>
-            <Row>
+            <div className="responsive-card-grid">
               {created && created.map((room, i) => <RoomCard key={i} completed={getCompleted(room)} {...room} buttons={[
                 {to: "/rooms/view/" + room.code, text: "Open"},
                 {to: "/rooms/edit/" + room.code, text: "Manage", color: "danger"}
               ]} />)}
               <RoomCard title="Create Room" desc="Create your own room with custom challenges and content here!" buttons={[{to: "/rooms/create", text: "Create +"}]} />
-            </Row>
+            </div>
           </Container>
         </div>
         <DefaultFooter />

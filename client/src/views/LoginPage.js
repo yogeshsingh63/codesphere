@@ -6,10 +6,9 @@ import {
 } from "reactstrap";
 
 import Navbar from "components/Navbars/Navbar.js";
-
 import LoginForm from "components/Form/Login.js";
-
 import { useAuthState } from "context/auth.js";
+import asset from "utils/asset.js";
 
 function LoginPage() {
   const { isSignedIn } = useAuthState();
@@ -36,15 +35,14 @@ function LoginPage() {
   return (
     <>
       <Navbar />
-      <div className="page-header" style={{
-        minHeight: '100vh',
-        background: '#f8fafc',
-        display: 'flex',
-        alignItems: 'center',
-        paddingTop: '64px'
+      <div className="page-header relative flex items-center min-h-screen py-24" style={{
+        backgroundImage: "url(" + asset("assets/img/modern_bg_abstract.png") + ")",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center'
       }}>
-        <Container>
-          <Col className="ml-auto mr-auto" md="5" lg="4">
+        <div className="absolute inset-0 bg-stone-900/10 pointer-events-none" />
+        <Container className="relative z-10">
+          <Col className="ml-auto mr-auto" md="6" lg="5" xl="4">
             <LoginForm />
           </Col>
         </Container>

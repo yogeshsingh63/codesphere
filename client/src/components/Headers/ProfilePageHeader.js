@@ -47,49 +47,38 @@ function ProfilePageHeader() {
   return (
     <>
       <div
-        className="page-header clear-filter page-header-small"
+        className="page-header page-header-small"
         style={{
-          background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
-          minHeight: '280px',
+          background: 'linear-gradient(135deg, #fdf8f5 0%, #f5e3d7 100%)',
+          minHeight: '220px',
           display: 'flex',
           alignItems: 'center',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          borderBottom: '1px solid #e7e5e4'
         }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            top: '-60%',
-            right: '-10%',
-            width: '500px',
-            height: '500px',
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)',
-            pointerEvents: 'none'
-          }}
-        />
         <Container>
           <Row className="align-items-center">
             <Col>
-              <h3 className="title" style={{ color: 'white', margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>
-                Welcome, {user}!
+              <h3 className="title" style={{ color: '#1c1917', margin: 0, fontSize: '1.875rem', fontWeight: 800 }}>
+                Welcome back, {user}!
               </h3>
             </Col>
             <Col className="text-right">
-              <div className="d-inline-block text-center" style={{ marginRight: '32px' }}>
-                <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 700, margin: 0 }}>
+              <div className="d-inline-block text-center" style={{ marginRight: '40px' }}>
+                <h2 style={{ color: '#c2410c', fontSize: '2.25rem', fontWeight: 800, margin: 0 }}>
                   {done}
                 </h2>
-                <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.875rem' }}>
+                <p style={{ color: '#78716c', margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>
                   Rooms Done
                 </p>
               </div>
               <div className="d-inline-block text-center">
-                <h2 style={{ color: 'white', fontSize: '2rem', fontWeight: 700, margin: 0 }}>
+                <h2 style={{ color: '#c2410c', fontSize: '2.25rem', fontWeight: 800, margin: 0 }}>
                   {joined}
                 </h2>
-                <p style={{ color: 'rgba(255,255,255,0.6)', margin: 0, fontSize: '0.875rem' }}>
+                <p style={{ color: '#78716c', margin: 0, fontSize: '0.875rem', fontWeight: 600 }}>
                   Rooms Joined
                 </p>
               </div>

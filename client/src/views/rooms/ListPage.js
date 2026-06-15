@@ -84,7 +84,7 @@ function ListPage() {
   const columns = [
     {title: "Title", field: "title"},
     {title: "Author", field: "author", formatter: (item) => (
-      <Link to={"/profile/" + item.author} style={{ color: '#6366f1', fontWeight: 500 }}>{item.author}</Link>
+      <Link to={"/profile/" + item.author} style={{ color: '#c2410c', fontWeight: 500 }}>{item.author}</Link>
     )},
     {title: "Code", field: "code"},
     {title: "Description", field: "desc"},
@@ -98,7 +98,7 @@ function ListPage() {
       <Navbar />
       <div className="wrapper">
         <ProfilePageHeader />
-        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
+        <div className="section" style={{ background: '#faf9f6', padding: '48px 0', minHeight: 'calc(100vh - 220px - 64px)' }}>
           <Container>
             <h3 className="title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '24px' }}>Room Listing</h3>
             <FormGroup style={{ marginBottom: '24px', maxWidth: '400px' }}>

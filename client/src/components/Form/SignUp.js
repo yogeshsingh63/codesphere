@@ -97,19 +97,19 @@ function SignUpForm() {
     return setPassStrength(["text-danger", "weak"]);
   }
 
-  const strengthColors = { weak: '#ef4444', okay: '#f59e0b', strong: '#10b981' };
+  const strengthColors = { weak: '#be123c', okay: '#b45309', strong: '#15803d' };
 
   return (
-    <Card style={{ border: '1px solid #e2e8f0', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
+    <Card style={{ border: '1px solid rgba(255, 255, 255, 0.45)', borderRadius: '24px', boxShadow: '0 12px 40px rgba(28, 25, 23, 0.08)', background: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
       <CardHeader className="text-center" style={{ background: 'transparent', borderBottom: 'none', padding: '32px 24px 0' }}>
-        <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-          <i className="fas fa-code" style={{ color: '#6366f1', fontSize: '24px' }}></i>
+        <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', border: '1px solid #fed7aa' }}>
+          <i className="fas fa-code" style={{ color: '#c2410c', fontSize: '24px' }}></i>
         </div>
-        <CardTitle tag="h3" style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>
+        <CardTitle tag="h3" style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, color: '#1c1917' }}>
           Create account
         </CardTitle>
-        <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '8px' }}>
-          Start your coding journey
+        <p style={{ color: '#78716c', fontSize: '0.875rem', marginTop: '8px' }}>
+          Collaborate on code, quizzes, and projects in real-time
         </p>
         {error && (
           <Alert color="danger" style={{ fontSize: '0.8125rem', padding: '10px 14px', borderRadius: '8px' }}>
@@ -120,7 +120,7 @@ function SignUpForm() {
       <CardBody style={{ padding: '24px' }}>
         <Form onSubmit={submitForm}>
           <FormGroup className="mb-3">
-            <Label for="username" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Username</Label>
+            <Label for="username" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Username</Label>
             <Input
               id="username"
               placeholder="Choose a username"
@@ -129,22 +129,22 @@ function SignUpForm() {
               onChange={e => setUsername(e.target.value)}
               required
               minLength={6}
-              style={{ borderRadius: '8px' }}
+              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
             />
           </FormGroup>
           <FormGroup className="mb-3">
-            <Label for="email" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Email</Label>
+            <Label for="email" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Email</Label>
             <Input
               id="email"
               placeholder="Enter your email"
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              style={{ borderRadius: '8px' }}
+              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
             />
           </FormGroup>
           <FormGroup className="mb-3">
-            <Label for="password" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Password</Label>
+            <Label for="password" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Password</Label>
             <Input
               id="password"
               placeholder="Create a password"
@@ -153,11 +153,11 @@ function SignUpForm() {
               onChange={e => { setPassword(e.target.value); scorePassword(e.target.value) } }
               required
               minLength={8}
-              style={{ borderRadius: '8px' }}
+              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
             />
             {password && (
               <div style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: '#e2e8f0', overflow: 'hidden' }}>
+                <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: '#e7e5e4', overflow: 'hidden' }}>
                   <div style={{ width: passStrength[1] === 'weak' ? '33%' : passStrength[1] === 'okay' ? '66%' : '100%', height: '100%', background: strengthColors[passStrength[1]], borderRadius: '2px', transition: 'all 0.3s' }} />
                 </div>
                 <span style={{ fontSize: '0.75rem', color: strengthColors[passStrength[1]], fontWeight: 600, textTransform: 'capitalize' }}>
@@ -167,7 +167,7 @@ function SignUpForm() {
             )}
           </FormGroup>
           <FormGroup className="mb-3">
-            <Label for="verify-password" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Confirm Password</Label>
+            <Label for="verify-password" style={{ fontSize: '0.875rem', fontWeight: 550, color: '#44403c' }}>Confirm Password</Label>
             <Input
               id="verify-password"
               placeholder="Confirm your password"
@@ -176,7 +176,7 @@ function SignUpForm() {
               onChange={e => setVerifyPassword(e.target.value)}
               required
               minLength={8}
-              style={{ borderRadius: '8px' }}
+              style={{ borderRadius: '8px', border: '1px solid #e7e5e4' }}
             />
           </FormGroup>
           <Button
@@ -185,15 +185,15 @@ function SignUpForm() {
             block
             size="lg"
             disabled={disabled}
-            style={{ fontWeight: 600, borderRadius: '10px', marginTop: '8px' }}
+            style={{ fontWeight: 600, borderRadius: '10px', marginTop: '8px', background: '#c2410c', borderColor: '#c2410c' }}
           >
             {disabled ? 'Creating account...' : 'Create Account'}
           </Button>
         </Form>
       </CardBody>
-      <CardFooter className="text-center" style={{ background: 'transparent', borderTop: '1px solid #f1f5f9', padding: '16px 24px' }}>
-        <p style={{ fontSize: '0.8125rem', color: '#64748b', margin: 0 }}>
-          Already have an account? <a href="/login" style={{ color: '#6366f1', fontWeight: 600 }}>Sign in</a>
+      <CardFooter className="text-center" style={{ background: 'transparent', borderTop: '1px solid #f5f5f4', padding: '16px 24px' }}>
+        <p style={{ fontSize: '0.8125rem', color: '#78716c', margin: 0 }}>
+          Already have an account? <a href="/login" style={{ color: '#c2410c', fontWeight: 600 }}>Sign in</a>
         </p>
       </CardFooter>
     </Card>

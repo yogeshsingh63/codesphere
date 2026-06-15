@@ -216,7 +216,7 @@ function CreatePage() {
         <ImportModal open={setImportModal} isOpen={importModal} submit={finishImport} />
 
         <ProfilePageHeader />
-        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
+        <div className="section" style={{ background: '#faf9f6', padding: '48px 0', minHeight: 'calc(100vh - 220px - 64px)' }}>
           <Container>
             <h3 className="title" style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
               Room {isEditing ? "Editor": "Creator"}
@@ -288,7 +288,7 @@ function CreatePage() {
                 <PaginatedTable
                   columns={[
                     {title: "Username", field: "username", formatter: (item) => (
-                      <Link to={"/profile/" + item.username} style={{ color: '#6366f1', fontWeight: 500 }}>{item.username}</Link>
+                      <Link to={"/profile/" + item.username} style={{ color: '#c2410c', fontWeight: 500 }}>{item.username}</Link>
                     )},
                     {title: "Completion", field: "completed", formatter: (item) => (
                       <>{item.completed ? item.completed.length : 0} / {sections.length} sections</>

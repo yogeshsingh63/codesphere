@@ -171,7 +171,7 @@ function ProfilePage() {
       <Navbar />
       <div className="wrapper">
         <ProfilePageHeader />
-        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
+        <div className="section" style={{ background: '#faf9f6', padding: '48px 0', minHeight: 'calc(100vh - 220px - 64px)' }}>
           {loaded ? (
             <Container>
               <Row>

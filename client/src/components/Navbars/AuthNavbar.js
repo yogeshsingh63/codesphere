@@ -43,7 +43,7 @@ function AuthNavbar({ transparent = true, fixed = true, innerRef, className }) {
       <Navbar className={navClasses} color="white" expand="lg">
         <Container>
           <NavbarBrand tag={RRNavLink} to="/" id="navbar-brand">
-            <i className="fas fa-code me-2" style={{ marginRight: '8px', color: '#6366f1' }}></i>
+            <i className="fas fa-code me-2" style={{ marginRight: '8px', color: '#c2410c' }}></i>
             CodeSphere
           </NavbarBrand>
           <button

@@ -216,7 +216,7 @@ function ViewPage() {
               {RoomButtons(num)}
             </div>
             <div className={["c-half-r", "c-large-r", "c-small-r", "d-none"][section.layout]}>
-              <div className="d-flex h-100 justify-content-center align-items-center" style={{ background: '#f8fafc' }}>
+              <div className="d-flex h-100 justify-content-center align-items-center" style={{ background: '#faf9f6' }}>
                 {section.info?.image ? (
                   <img
                     src={process.env.REACT_APP_API_URL + "/file/" + section.info.image.code}
