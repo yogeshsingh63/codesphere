@@ -84,12 +84,12 @@ function ListPage() {
   const columns = [
     {title: "Title", field: "title"},
     {title: "Author", field: "author", formatter: (item) => (
-      <Link to={"/profile/" + item.author}>{item.author}</Link>
+      <Link to={"/profile/" + item.author} style={{ color: '#6366f1', fontWeight: 500 }}>{item.author}</Link>
     )},
     {title: "Code", field: "code"},
     {title: "Description", field: "desc"},
     {title: "", field: "", formatter: (item) => (
-      <Button onClick={() => join(item.code)} color="info" className="btn-sm m-0">Join</Button>
+      <Button onClick={() => join(item.code)} color="primary" size="sm" style={{ fontWeight: 600, borderRadius: '6px', margin: 0 }}>Join</Button>
     )}
   ];
 
@@ -98,17 +98,21 @@ function ListPage() {
       <Navbar />
       <div className="wrapper">
         <ProfilePageHeader />
-        <div className="section">
+        <div className="section" style={{ background: '#f8fafc', padding: '48px 0', minHeight: 'calc(100vh - 280px - 64px)' }}>
           <Container>
-            <h3 className="title">Room Listing</h3>
-            <FormGroup>
-             <label>Search</label>
-              <Input
-                placeholder="Search"
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              ></Input>
+            <h3 className="title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', marginBottom: '24px' }}>Room Listing</h3>
+            <FormGroup style={{ marginBottom: '24px', maxWidth: '400px' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: 500, color: '#475569', marginBottom: '6px' }}>Search Rooms</label>
+              <div style={{ position: 'relative' }}>
+                <Input
+                  placeholder="Type to search rooms..."
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{ borderRadius: '8px', paddingLeft: '36px' }}
+                />
+                <i className="fas fa-search" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }}></i>
+              </div>
             </FormGroup>
             <PaginatedTable columns={columns} items={items} />
           </Container>
