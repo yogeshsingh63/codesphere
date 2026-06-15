@@ -12,21 +12,21 @@ $white-color:                #FFFFFF !default;
 $white-bg:                   #FFFFFF !default;
 $orange-bg:                  #e95e38 !default;
 
-$smoke-bg:                   #f8fafc !default;
-$light-black:                #475569 !default;
+$smoke-bg:                   #faf9f6 !default;
+$light-black:                #57534e !default;
 
-$black-bg:                   rgba(15, 23, 42, .97) !default;
+$black-bg:                   rgba(28, 25, 23, .97) !default;
 
-$black-color:                #1e293b !default;
-$black-hr:                   #e2e8f0 !default;
+$black-color:                #1c1917 !default;
+$black-hr:                   #e7e5e4 !default;
 
-$light-gray:                 #e2e8f0 !default;
-$medium-gray:                #cbd5e1 !default;
-$dark-gray:                  #94a3b8 !default;
+$light-gray:                 #e7e5e4 !default;
+$medium-gray:                #d6d3d1 !default;
+$dark-gray:                  #78716c !default;
 
-$opacity-gray-3:             rgba(226, 232, 240, .3) !default;
-$opacity-gray-5:             rgba(226, 232, 240, .5) !default;
-$opacity-gray-8:             rgba(226, 232, 240, .8) !default;
+$opacity-gray-3:             rgba(231, 229, 228, .3) !default;
+$opacity-gray-5:             rgba(231, 229, 228, .5) !default;
+$opacity-gray-8:             rgba(231, 229, 228, .8) !default;
 
 
 $opacity-5:                  rgba(255,255,255, .5) !default;
@@ -40,36 +40,36 @@ $opacity-1:                  rgba(255,255,255, .1) !default;
 $opacity-2:                  rgba(255,255,255, .2) !default;
 
 $transparent-bg:             transparent !default;
-$dark-background:            #1e293b !default;
+$dark-background:            #1c1917 !default;
 
-$default-color:              #64748b !default;
+$default-color:              #78716c !default;
 $default-states-color:       darken($default-color, 8%) !default;
-$default-color-opacity:      rgba(100, 116, 139, .6) !default;
+$default-color-opacity:      rgba(120, 113, 108, .6) !default;
 
-$primary-color:              #6366f1 !default;
+$primary-color:              #c2410c !default;
 $primary-states-color:       darken($primary-color, 6%) !default;
-$primary-color-opacity:      rgba(99, 102, 241, .15) !default;
-$primary-color-alert:        rgba(99, 102, 241, .8) !default;
+$primary-color-opacity:      rgba(194, 65, 12, .15) !default;
+$primary-color-alert:        rgba(194, 65, 12, .8) !default;
 
-$success-color:              #10b981 !default;
+$success-color:              #15803d !default;
 $success-states-color:       darken($success-color, 6%) !default;
-$success-color-opacity:      rgba(16, 185, 129, .15) !default;
-$success-color-alert:        rgba(16, 185, 129, .8) !default;
+$success-color-opacity:      rgba(21, 128, 61, .15) !default;
+$success-color-alert:        rgba(21, 128, 61, .8) !default;
 
-$info-color:                 #0ea5e9 !default;
+$info-color:                 #0f766e !default;
 $info-states-color:          darken($info-color, 6%) !default;
-$info-color-opacity:         rgba(14, 165, 233, .15) !default;
-$info-color-alert:           rgba(14, 165, 233, .8) !default;
+$info-color-opacity:         rgba(15, 118, 110, .15) !default;
+$info-color-alert:           rgba(15, 118, 110, .8) !default;
 
-$warning-color:              #f59e0b !default;
+$warning-color:              #b45309 !default;
 $warning-states-color:       darken($warning-color, 6%) !default;
-$warning-color-opacity:      rgba(245, 158, 11, .15) !default;
-$warning-color-alert:        rgba(245, 158, 11, .8) !default;
+$warning-color-opacity:      rgba(180, 83, 9, .15) !default;
+$warning-color-alert:        rgba(180, 83, 9, .8) !default;
 
-$danger-color:               #ef4444 !default;
+$danger-color:               #be123c !default;
 $danger-states-color:        darken($danger-color, 6%) !default;
-$danger-color-opacity:       rgba(239, 68, 68, .15) !default;
-$danger-color-alert:         rgba(239, 68, 68, .8) !default;
+$danger-color-opacity:       rgba(190, 18, 60, .15) !default;
+$danger-color-alert:         rgba(190, 18, 60, .8) !default;
 
 $brand-primary:              $primary-color !default;
 $brand-info:                 $info-color !default;
@@ -217,12 +217,12 @@ $width-icon-message:			 40px;
 $height-icon-message-sm: 		 20px;
 $width-icon-message-sm:			 20px;
 
-$white-navbar:                  rgba(#FFFFFF, .96);
-$primary-navbar:                rgba(#34ACDC, .98);
-$info-navbar:                   rgba(#5BCAFF, .98);
-$success-navbar:                rgba(#4CD964, .98);
-$warning-navbar:                rgba(#FF9500, .98);
-$danger-navbar:                 rgba(#FF4C40, .98);
+$white-navbar:                  rgba(#FFFFFF, .96) !default;
+$primary-navbar:                rgba(#c2410c, .98) !default;
+$info-navbar:                   rgba(#0f766e, .98) !default;
+$success-navbar:                rgba(#15803d, .98) !default;
+$warning-navbar:                rgba(#b45309, .98) !default;
+$danger-navbar:                 rgba(#be123c, .98) !default;
 
 $topbar-x:             topbar-x !default;
 $topbar-back:          topbar-back !default;
