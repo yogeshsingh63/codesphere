@@ -6,6 +6,7 @@ import { AuthProvider } from "context/auth.js";
 import { AlertProvider } from "context/alert.js";
 
 import "assets/css/bootstrap.min.css";
+import "assets/css/tailwind.css";
 import "assets/scss/styles.scss";
 import "assets/scss/now-ui-kit.scss";
 import "assets/demo/demo.css";

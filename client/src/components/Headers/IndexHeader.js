@@ -23,6 +23,7 @@ function IndexHeader() {
           <img
             alt="CodeSphere"
             className="w-16 h-16 mx-auto mb-6 object-contain"
+            style={{ width: '64px', height: '64px', objectFit: 'contain' }}
             src={asset("assets/img/favicon.png")}
           />
           <h1 className="text-stone-900 text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
