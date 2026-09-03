@@ -36,7 +36,7 @@ function MessageModal({ open, isOpen, title, body, submit }) {
           <button
             type="button"
             onClick={finish}
-            className="px-4 py-2 bg-stone-900 hover:bg-stone-850 text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
+            className="px-4 py-2 bg-stone-900 hover:bg-stone-900 text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
           >
             Close
           </button>
@@ -46,4 +46,4 @@ function MessageModal({ open, isOpen, title, body, submit }) {
   );
 }
 
-export default MessageModal;
+export default MessageModal;

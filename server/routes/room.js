@@ -56,6 +56,7 @@ const ROOM_SCHEMA = {
     desc: { type: "string", minLength: 3, maxLength: 280 },
     sections: {
       type: "array",
+      maxItems: 100,
       items: {
         additionalProperties: false,
         required: ["title", "type"],
@@ -65,7 +66,7 @@ const ROOM_SCHEMA = {
           type: { enum: SECTION_TYPES },
           layout: { type: "number" },
           code: { type: "string" },
-          markdown: { type: "string" },
+          markdown: { type: "string", maxLength: 100000 },
           lang: { type: "string" },
           info: {
             type: "object",
@@ -74,7 +75,7 @@ const ROOM_SCHEMA = {
               image: FILE_SCHEMA,
             },
           },
-          coding: {
+            coding: {
             type: "object",
             additionalProperties: false,
             properties: {
@@ -82,17 +83,18 @@ const ROOM_SCHEMA = {
               files: STORAGE_SCHEMA,
               checks: {
                 type: "array",
+                maxItems: 50,
                 items: {
                   additionalProperties: false,
                   type: "object",
                   properties: {
-                    stdin: { type: "string" },
-                    stdout: { type: "string" },
-                    code: { type: "string" },
-                    output: { type: "string" },
+                    stdin: { type: "string", maxLength: 20000 },
+                    stdout: { type: "string", maxLength: 20000 },
+                    code: { type: "string", maxLength: 5000 },
+                    output: { type: "string", maxLength: 5000 },
                     multiline: { type: "boolean" },
                     fail: { type: "boolean" },
-                    hint: { type: "string" },
+                    hint: { type: "string", maxLength: 1000 },
                   },
                 },
               },
@@ -103,15 +105,16 @@ const ROOM_SCHEMA = {
             additionalProperties: false,
             required: ["question"],
             properties: {
-              question: { type: "string" },
+              question: { type: "string", maxLength: 2000 },
               answers: {
                 type: "array",
+                maxItems: 20,
                 items: {
                   type: "object",
                   required: ["choice", "correct"],
                   additionalProperties: false,
                   properties: {
-                    choice: { type: "string" },
+                    choice: { type: "string", maxLength: 500 },
                     correct: { type: "boolean" },
                   },
                 },
@@ -119,7 +122,7 @@ const ROOM_SCHEMA = {
               all: { type: "boolean" },
             },
           },
-          flag: { type: "string" },
+          flag: { type: "string", maxLength: 500 },
           website: {
             type: "object",
             required: ["url"],
@@ -167,6 +170,7 @@ router.post(
         )
       );
     }
+    const incomingSections = Array.isArray(roomData.sections) ? roomData.sections : [];
 
     try {
       const room = new Room({
@@ -178,7 +182,7 @@ router.post(
       });
 
       const sections = [];
-      for (const sectionData of roomData.sections) {
+      for (const sectionData of incomingSections) {
         const section = new Section({
           ...sectionData,
           code: randomUUID(),
@@ -219,9 +223,11 @@ router.post(
     }
 
     const code = req.body.code;
-    if (typeof code !== "string") {
+    if (typeof code !== "string" || code.length > 100) {
       return res.json(response.failure("Missing room code."));
     }
+
+    const incomingSections = Array.isArray(roomData.sections) ? roomData.sections : [];
 
     const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
     const ownedRoom = user.created.find((entry) => entry.code === code);
@@ -239,7 +245,7 @@ router.post(
     room.public = roomData.public;
 
     const updatedSections = [];
-    for (const sectionData of roomData.sections) {
+    for (const sectionData of incomingSections) {
       if (sectionData.code) {
         if (!validator.isUUID(sectionData.code)) {
           return res.json(response.failure("Invalid section code."));
@@ -330,7 +336,7 @@ router.post(
   authenticate.requiresLogin,
   asyncHandler(async (req, res) => {
     const code = req.body.code;
-    if (typeof code !== "string") {
+    if (typeof code !== "string" || code.length > 100) {
       return res.json(response.failure("Missing room code."));
     }
 
@@ -399,9 +405,12 @@ router.post(
     ]);
 
     const clone = response.sanitize(room);
+    if (!clone || !clone.author) {
+      return res.json(response.failure("Unable to find room."));
+    }
     clone.author = clone.author.username;
 
-    const completed = user.completed.find((entry) => entry.room.code === room.code);
+    const completed = (user.completed || []).find((entry) => entry?.room?.code === room.code);
 
     for (let index = 0; index < clone.sections.length; index += 1) {
       clone.sections[index].completed = Boolean(
@@ -416,20 +425,24 @@ router.post(
       clone.sections = response.sanitize(clone.sections, ["flag"]);
       for (const section of clone.sections) {
         if (section.type === "coding") {
-          section.coding.checks = section.coding.checks.map(() => true);
+          const checks = section.coding?.checks;
+          section.coding = section.coding || {};
+          section.coding.checks = Array.isArray(checks) ? checks.map(() => true) : [];
         }
         if (section.type === "quiz") {
-          section.quiz.answers = section.quiz.answers.map((answer) => ({
-            choice: answer.choice,
-          }));
+          const answers = section.quiz?.answers;
+          section.quiz = section.quiz || {};
+          section.quiz.answers = Array.isArray(answers)
+            ? answers.map((answer) => ({ choice: answer?.choice }))
+            : [];
         }
       }
       delete clone.members;
     } else {
-      clone.members = clone.members.map((member) => ({
+      clone.members = (clone.members || []).map((member) => ({
         username: member.username,
-        completed: member.completed
-          .filter((entry) => entry.room.code === code)[0]
+        completed: (member.completed || [])
+          .filter((entry) => entry?.room?.code === code)[0]
           ?.sections?.map((section) => section.code),
       }));
     }
@@ -449,15 +462,16 @@ router.post(
   "/complete",
   authenticate.requiresLogin,
   asyncHandler(async (req, res) => {
-    if (!req.body.room || typeof req.body.room !== "string") {
+    if (!req.body.room || typeof req.body.room !== "string" || req.body.room.length > 100) {
       return res.json(response.failure("Missing room."));
     }
-    if (!req.body.section || typeof req.body.section !== "string") {
+    if (!req.body.section || typeof req.body.section !== "string" || req.body.section.length > 100) {
       return res.json(response.failure("Missing section."));
     }
 
     const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
-    await check.verify({ user, res, ...req.body });
+    const { room, section, answer, answers, flag, lang, files } = req.body ?? {};
+    await check.verify({ user, res, room, section, answer, answers, flag, lang, files });
   })
 );
 
@@ -484,9 +498,13 @@ router.post(
       return res.json(response.failure("Unable to find room."));
     }
 
-    user.enrolled.push(room._id);
-    room.members.push(user._id);
-    await Promise.all([room.save(), user.save()]);
+    // Room codes are unguessable capability URLs: anyone holding the code
+    // may join (this is how private rooms are shared). $addToSet keeps
+    // concurrent joins from double-pushing.
+    await Promise.all([
+      User.updateOne({ _id: user._id }, { $addToSet: { enrolled: room._id } }).exec(),
+      Room.updateOne({ _id: room._id }, { $addToSet: { members: user._id } }).exec(),
+    ]);
 
     return res.json(response.success("You have successfully joined the room."));
   })
@@ -496,7 +514,6 @@ router.get(
   "/list",
   asyncHandler(async (req, res) => {
     const { page, limit, search } = req.query;
-    const hasPagination = page !== undefined || limit !== undefined;
     const parsedPage = Math.max(Number.parseInt(page || "1", 10) || 1, 1);
     const parsedLimit = Math.min(
       Math.max(Number.parseInt(limit || "20", 10) || 20, 1),
@@ -505,7 +522,8 @@ router.get(
 
     const query = { public: true };
     if (typeof search === "string" && search.trim().length > 0) {
-      const regex = new RegExp(escapeRegex(search.trim()), "i");
+      const term = search.trim().slice(0, 100);
+      const regex = new RegExp(escapeRegex(term), "i");
       const authors = await User.find({ username: regex }, "_id").lean().exec();
       query.$or = [
         { title: regex },
@@ -515,24 +533,19 @@ router.get(
     }
 
     const total = await Room.countDocuments(query);
-    const findQuery = Room.find(query).populate("author");
-
-    if (hasPagination) {
-      findQuery.skip((parsedPage - 1) * parsedLimit).limit(parsedLimit);
-    }
+    // Always paginate: an unbounded default would dump every public room.
+    const findQuery = Room.find(query).populate("author").lean();
+    findQuery.skip((parsedPage - 1) * parsedLimit).limit(parsedLimit);
 
     const docs = await findQuery.exec();
     const rooms = docs.map((room) => ({
       code: room.code,
       title: room.title,
       desc: room.desc,
-      author: room.author.username,
+      author: room.author?.username ?? "unknown",
     }));
 
-    if (!hasPagination && !search) {
-      return res.json(response.success(rooms));
-    }
-
+    // Single consistent shape: always { rooms, pagination }
     return res.json(
       response.success({
         rooms,

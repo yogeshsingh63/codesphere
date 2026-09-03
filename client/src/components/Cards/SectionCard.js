@@ -1,42 +1,63 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
-function SectionCard({ title, desc, onClick = () => {}, onDelete = null, to, button = "Edit" }) {
+const TYPE_ICONS = {
+  info: "fa-circle-info",
+  coding: "fa-code",
+  quiz: "fa-circle-question",
+  flag: "fa-flag",
+  website: "fa-globe",
+};
+
+function SectionCard({ title, desc, type, onClick = () => {}, onDelete = null, to, button = "Edit" }) {
   return (
-    <div className="group bg-white border border-stone-200 rounded-2xl p-6 flex flex-col justify-between min-h-[180px] shadow-xs hover:shadow-md hover:-translate-y-1 transition-all duration-300 ease-out">
-      <div>
-        <h4 className="text-stone-900 text-base font-semibold tracking-tight leading-snug group-hover:text-orange-700 transition-colors mb-2">
+    <div className="group flex min-h-[170px] flex-col justify-between rounded-2xl border border-[var(--cs-border)] bg-[var(--cs-surface-elevated)] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+      <div className="min-w-0">
+        <div className="mb-2.5 flex items-center justify-between gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--cs-brand-soft)] text-[var(--cs-brand)]">
+            <i className={`fas ${TYPE_ICONS[type] || "fa-file-lines"}`} aria-hidden="true" />
+          </div>
+          {type && (
+            <span className="rounded-full border border-[var(--cs-border)] bg-[var(--cs-surface)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--cs-ink-faint)]">
+              {type}
+            </span>
+          )}
+        </div>
+        <h4 className="cs-clamp-1 text-[15px] font-bold tracking-tight text-[var(--cs-ink)] transition-colors group-hover:text-[var(--cs-brand)]">
           {title}
         </h4>
-        <p className="text-stone-500 text-xs leading-relaxed mb-6">
+        <p className="cs-clamp-2 mt-1 text-xs leading-relaxed text-[var(--cs-ink-muted)]">
           {desc}
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
         {to ? (
           <Link
             to={to}
-            onClick={e => onClick(title)}
-            className="px-3.5 py-1.5 bg-stone-900 text-white hover:bg-orange-700 rounded-lg text-[11px] font-semibold transition-all shadow-xs"
+            onClick={() => onClick(title)}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--cs-ink)] px-3.5 py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
           >
             {button}
           </Link>
         ) : (
           <button
-            onClick={e => onClick(title)}
-            className="px-3.5 py-1.5 bg-stone-900 text-white hover:bg-orange-700 rounded-lg text-[11px] font-semibold transition-all shadow-xs"
+            type="button"
+            onClick={() => onClick(title)}
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-[var(--cs-ink)] px-3.5 py-2 text-[11px] font-bold text-white transition-opacity hover:opacity-90"
           >
             {button}
           </button>
         )}
-        
+
         {onDelete && (
           <button
-            onClick={e => onDelete(title)}
-            className="px-3 py-1.5 border border-stone-200 text-stone-500 hover:text-red-600 hover:bg-red-50 hover:border-red-100 rounded-lg text-[11px] font-semibold transition-all"
+            type="button"
+            onClick={() => onDelete(title)}
+            aria-label={`Delete section ${title}`}
+            className="inline-flex items-center justify-center rounded-xl border border-[var(--cs-border)] px-3 py-2 text-[11px] font-semibold text-[var(--cs-ink-muted)] transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:hover:border-red-500/20 dark:hover:bg-red-500/10 dark:hover:text-red-400"
           >
-            Delete
+            <i className="fas fa-trash-can" aria-hidden="true" />
           </button>
         )}
       </div>

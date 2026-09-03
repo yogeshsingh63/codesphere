@@ -3,6 +3,9 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { WebSocketServer } from "ws";
 
 import sockets from "./src/sockets.js";
@@ -21,9 +24,29 @@ import fileRouter from "./routes/file.js";
 
 dotenv.config();
 
+// Read once at boot instead of per request.
+let APP_VERSION = "2.0.0";
+try {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf8"));
+  if (pkg?.version) APP_VERSION = pkg.version;
+} catch {}
+
 const app = express();
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
 const server = http.createServer(app);
 const wss = new WebSocketServer({ noServer: true });
+
+// Minimal security headers (avoid extra dep)
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  next();
+});
 
 sockets.configure(wss);
 
@@ -88,6 +111,12 @@ const authLimiter = createRateLimiter({
   message: "Too many authentication attempts. Please try again later.",
 });
 
+const writeLimiter = createRateLimiter({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: "Too many requests. Please slow down.",
+});
+
 app.use((req, res, next) => {
   if (isShuttingDown) {
     return res
@@ -105,8 +134,8 @@ app.use((req, res, next) => {
 });
 
 app.use(requestLogger);
-app.use(express.urlencoded({ extended: false, limit: "128mb" }));
-app.use(express.json({ limit: "128mb" }));
+app.use(express.urlencoded({ extended: false, limit: "30mb" }));
+app.use(express.json({ limit: "30mb" }));
 app.use(requestSanitizer);
 
 // Parse allowed origins from env (supports comma-separated list).
@@ -121,13 +150,13 @@ const corsOptions = {
     // Allow server-to-server / same-origin requests (no origin header)
     if (!origin) return callback(null, true);
 
-    // Always allow localhost during development
-    if (origin.startsWith("http://localhost:")) {
-      return callback(null, true);
-    }
-
     // Normalize incoming origin (strip trailing slash just in case)
     const normalized = origin.replace(/\/+$/, "");
+
+    // Localhost bypass only outside production
+    if (process.env.NODE_ENV !== "production" && normalized.startsWith("http://localhost:")) {
+      return callback(null, true);
+    }
 
     if (allowedOrigins.includes(normalized)) {
       return callback(null, true);
@@ -145,27 +174,53 @@ app.options("*", cors(corsOptions));
 
 app.use("/user/login", authLimiter);
 app.use("/user/register", authLimiter);
+app.use("/user/update_pass", authLimiter);
+app.use("/room/create", writeLimiter);
+app.use("/room/edit", writeLimiter);
+app.use("/room/delete", writeLimiter);
+app.use("/room/join", writeLimiter);
+app.use("/room/complete", writeLimiter);
+app.use("/file/upload", writeLimiter);
+app.use("/file/update", writeLimiter);
+app.use("/file/delete", writeLimiter);
+app.use("/file/del_folder", writeLimiter);
+app.use("/file/new_folder", writeLimiter);
 
 app.use("/user", userRouter);
 app.use("/room", roomRouter);
 app.use("/code", codeRouter);
 app.use("/file", fileRouter);
 
-app.get("/version", async (req, res) => {
-  res.json({
-    success: true,
-    version: 1.0,
-  });
+app.get("/version", (req, res) => {
+  res.json(response.success({ version: APP_VERSION }));
 });
 
 app.get("/", (req, res) => {
   res.send("CodeSphere API Server");
 });
 
+// Unknown routes speak JSON like everything else (not Express HTML).
+app.use((req, res) => {
+  return res.status(404).json(response.failure("Not found."));
+});
+
 app.use((err, req, res, next) => {
   console.error("[ERROR]", err);
   if (res.headersSent) {
     return next(err);
+  }
+
+  if (err && (err.code === "LIMIT_FILE_SIZE" || err.code === "LIMIT_FILE_COUNT")) {
+    return res.status(413).json(response.failure("The file is too large."));
+  }
+  if (err && err.type === "entity.too.large") {
+    return res.status(413).json(response.failure("Request body too large."));
+  }
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return res.status(400).json(response.failure("Malformed JSON body."));
+  }
+  if (err && err.message && err.message.includes("not allowed by CORS")) {
+    return res.status(403).json(response.failure("Origin not allowed."));
   }
 
   return res.status(500).json(response.failure("Internal server error."));
@@ -182,8 +237,12 @@ server.on("upgrade", async (request, socket, head) => {
       return socket.destroy();
     }
 
-    const token =
+    let token =
       requestUrl.searchParams.get("token") || request.headers.authorization;
+    // Match HTTP semantics: allow "Bearer <token>" in the header.
+    if (typeof token === "string" && token.startsWith("Bearer ")) {
+      token = token.slice(7).trim();
+    }
     const decoded = authenticate.decode(token);
 
     if (!decoded || !decoded.isSignedIn || !decoded.username) {
@@ -207,9 +266,10 @@ server.on("upgrade", async (request, socket, head) => {
   }
 });
 
-server.listen(process.env.PORT, () => {
+const PORT = Number.parseInt(process.env.PORT || "3001", 10);
+server.listen(PORT, () => {
   console.log(
-    `[API] CodeSphere server listening at http://localhost:${process.env.PORT}`
+    `[API] CodeSphere server listening at http://localhost:${PORT}`
   );
 });
 

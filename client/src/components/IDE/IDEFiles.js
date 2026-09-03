@@ -11,7 +11,7 @@ from "reactstrap";
 import { useAlertState } from "context/alert.js";
 
 function IDEFiles({active, setActive, size}) {
-  const { setInputOptions, setConfirmOptions, setDragDropOptions } = useAlertState();
+  const { setInputOptions, setConfirmOptions, setDragDropOptions, setErrorOptions } = useAlertState();
 
   const [sideOpen, setSideOpen] = React.useState(false);
 
@@ -255,8 +255,8 @@ function IDEFiles({active, setActive, size}) {
       submit: (uploaded) => {
         uploaded.forEach((file) => {
           const reader = new FileReader();
-          reader.onabort = () => console.log('file reading was aborted');
-          reader.onerror = () => console.log('file reading has failed');
+          reader.onabort = () => setErrorOptions({ body: "File reading was aborted." });
+          reader.onerror = () => setErrorOptions({ body: "File reading failed." });
           reader.onload = () => {
             newFile(file.name, reader.result);
           }
@@ -307,40 +307,47 @@ function IDEFiles({active, setActive, size}) {
       <div
         style={{"left": sideOpen ? "0%": "-75%"}}
         className={"ide-file-side" + (sideOpen ? " ide-file-side-active" : "") + (size === "normal" ? "" : " pl-3")}
+        aria-hidden={!sideOpen}
       >
-        <div className="ide-file-tab" onClick={() => setSideOpen(false)}>
-          <i className="fas fa-bars"></i>
-        </div>
-        <div className="ide-file-tab" onClick={newFileDialog}>
-          <i className="fas fa-file"></i>
-        </div>
-        <div className="ide-file-tab" onClick={newFolderDialog}>
-          <i className="fas fa-folder"></i>
-        </div>
-        <div className="ide-file-tab" onClick={uploadFile}>
-          <i className="fas fa-upload"></i>
-        </div>
+        <button type="button" className="ide-file-tab" onClick={() => setSideOpen(false)} aria-label="Close file sidebar">
+          <i className="fas fa-bars" aria-hidden="true"></i>
+        </button>
+        <button type="button" className="ide-file-tab" onClick={newFileDialog} aria-label="New file">
+          <i className="fas fa-file" aria-hidden="true"></i>
+        </button>
+        <button type="button" className="ide-file-tab" onClick={newFolderDialog} aria-label="New folder">
+          <i className="fas fa-folder" aria-hidden="true"></i>
+        </button>
+        <button type="button" className="ide-file-tab" onClick={uploadFile} aria-label="Upload file">
+          <i className="fas fa-upload" aria-hidden="true"></i>
+        </button>
 
         {active.loaded && active.files.sort((a, b) => a.folder.localeCompare(b.folder)).filter(f => f.folder !== "/").map((location, i) => SideFolder(location.folder, i))}
         {active.loaded && SideFolder("/", 0, false)}  
       </div>
 
-      <div className="ide-file-tab" onClick={() => setSideOpen(true)}>
-        <i className="fas fa-bars"></i>
-      </div>
+      <button type="button" className="ide-file-tab" onClick={() => setSideOpen(true)} aria-label="Open file sidebar">
+        <i className="fas fa-bars" aria-hidden="true"></i>
+      </button>
           
       {active.loaded && active.open.map((open, i) => (
-        <div key={i} className="d-inline">
-          <span
+        <div key={`${open.folder}${open.filename}${i}`} className="d-inline" role="tablist" aria-label="Open files">
+          <button
+            type="button"
             onClick={() => removeOpen(open)}
+            aria-label={`Close ${open.filename}`}
             className={"ide-file-tab ide-file-x" + ((active.file && open.filename === active.file.filename && open.folder === active.folder) ? " ide-file-selected" : "")}
-          >x</span>
-          <span 
+          >x</button>
+          <button
+            type="button"
             onClick={() => setActive({...active, file: openToFile(open), folder: open.folder})}
+            aria-label={`Open ${open.filename}`}
+            aria-selected={Boolean(active.file && open.filename === active.file.filename && open.folder === active.folder)}
+            role="tab"
             className={"ide-file-tab ide-file-name" + ((active.file && open.filename === active.file.filename && open.folder === active.folder) ? " ide-file-selected" : "")}
           >
             {open.filename}
-          </span>
+          </button>
         </div>
       ))}
     </div>

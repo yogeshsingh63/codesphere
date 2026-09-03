@@ -12,6 +12,67 @@ const RUN_LIMIT_PER_WINDOW = Number.parseInt(
   process.env.WS_RUN_LIMIT_PER_MINUTE || "10",
   10
 );
+const CHECK_WINDOW_MS = 60 * 1000;
+const CHECK_LIMIT_PER_WINDOW = 30;
+const WS_MAX_FILES = 50;
+const WS_MAX_FILE_BYTES = 512 * 1024;
+const WS_MAX_TOTAL_BYTES = 4 * 1024 * 1024;
+const WS_MAX_INPUT_BYTES = 20 * 1024;
+
+function sanitizeRunPath(value) {
+  if (typeof value !== "string") return "";
+  return value
+    .replace(/\\/g, "/")
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .trim()
+    .slice(0, 200);
+}
+
+function validRunFiles(files) {
+  if (!files || typeof files !== "object") {
+    return "Missing files.";
+  }
+  // Client sends an array of { folder, files: [...] }; accept plain maps too.
+  const locations = Array.isArray(files) ? files : Object.values(files);
+  let count = 0;
+  let bytes = 0;
+  for (const location of locations) {
+    const folder = location && typeof location === "object" ? location.folder : "";
+    const list = location && typeof location === "object" ? location.files : null;
+    if (typeof folder !== "string" || !Array.isArray(list)) {
+      return "Malformed files payload.";
+    }
+    const cleanFolder = sanitizeRunPath(folder);
+    if (!cleanFolder || cleanFolder.includes("..")) {
+      return "Invalid folder path.";
+    }
+    for (const file of list) {
+      if (!file || typeof file !== "object") {
+        return "Malformed files payload.";
+      }
+      const name = sanitizeRunPath(file.filename);
+      if (!name || name.includes("..")) {
+        return "Invalid file name.";
+      }
+      if (typeof file.content !== "string") {
+        return "Malformed files payload.";
+      }
+      const fileBytes = Buffer.byteLength(file.content, "utf8");
+      if (fileBytes > WS_MAX_FILE_BYTES) {
+        return `File ${name} is too large to execute.`;
+      }
+      count += 1;
+      bytes += fileBytes;
+      if (count > WS_MAX_FILES || bytes > WS_MAX_TOTAL_BYTES) {
+        return "Files payload too large.";
+      }
+    }
+  }
+  if (count === 0) {
+    return "Missing files.";
+  }
+  return null;
+}
 
 function safeSend(ws, data) {
   if (ws.readyState !== WebSocket.OPEN) {
@@ -29,6 +90,7 @@ const configure = (wss) => {
     let room = null;
     let runInFlight = false;
     let runTimestamps = [];
+    let checkTimestamps = [];
 
     const emit = (data, toSelf = true) => {
       let sent = false;
@@ -95,11 +157,15 @@ const configure = (wss) => {
         }
 
         const { files, lang, input } = data;
-        if (!files || typeof files !== "object") {
-          return emit({ type: "stderr", msg: "Missing files." });
+        const filesError = validRunFiles(files);
+        if (filesError) {
+          return emit({ type: "stderr", msg: filesError });
         }
-        if (!lang || typeof lang !== "string") {
+        if (!lang || typeof lang !== "string" || lang.length > 50) {
           return emit({ type: "stderr", msg: "Missing language." });
+        }
+        if (input !== undefined && (typeof input !== "string" || Buffer.byteLength(input, "utf8") > WS_MAX_INPUT_BYTES)) {
+          return emit({ type: "stderr", msg: "Input too large." });
         }
 
         const now = Date.now();
@@ -173,12 +239,24 @@ const configure = (wss) => {
       }
 
       if (data.type === "check") {
-        if (!data.room || typeof data.room !== "string") {
+        if (!data.room || typeof data.room !== "string" || data.room.length > 100) {
           return emit({ type: "stderr", msg: "Missing room." });
         }
-        if (!data.section || typeof data.section !== "string") {
+        if (!data.section || typeof data.section !== "string" || data.section.length > 100) {
           return emit({ type: "stderr", msg: "Missing section." });
         }
+
+        const checkNow = Date.now();
+        checkTimestamps = checkTimestamps.filter(
+          (timestamp) => timestamp > checkNow - CHECK_WINDOW_MS
+        );
+        if (checkTimestamps.length >= CHECK_LIMIT_PER_WINDOW) {
+          return emit({
+            type: "stderr",
+            msg: "Too many verification requests. Please wait a moment.",
+          });
+        }
+        checkTimestamps.push(checkNow);
 
         emit({ type: "pending" });
         try {

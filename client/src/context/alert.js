@@ -69,7 +69,7 @@ function AlertProvider({children}) {
       setPleaseWaitModal(true);
   }, [pleaseWaitOptions]);
 
-  const state = {
+  const state = React.useMemo(() => ({
     setInputOptions,
     setConfirmOptions,
     setMessageOptions,
@@ -78,7 +78,7 @@ function AlertProvider({children}) {
     setDragDropOptions,
     setFileListOptions,
     setPleaseWaitOptions
-  }
+  }), []);
 
   return (
     <AlertContext.Provider value={state}>

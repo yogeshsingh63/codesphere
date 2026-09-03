@@ -1,5 +1,11 @@
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { Worker } from "worker_threads";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const templateFile = (...parts) => fs.readFileSync(path.join(__dirname, "templates", ...parts)).toString();
 
 const MAX_CONCURRENT_EXECUTIONS = Number.parseInt(
   process.env.SANDBOX_MAX_CONCURRENCY || "5",
@@ -16,6 +22,8 @@ let activeExecutions = 0;
 function enqueueExecution(executions, callback) {
   return new Promise((resolve, reject) => {
     if (executionQueue.length >= MAX_QUEUED_EXECUTIONS) {
+      // Single busy signal via the normal callback path; resolve (don't
+      // reject) so callers don't emit a second "unavailable" error.
       callback({
         exit_code: 1,
         stderr: "The code execution service is busy. Please try again shortly.",
@@ -41,48 +49,86 @@ function processQueue() {
       workerData: job.executions,
     });
 
+    // Guard the slot: "error" doesn't always precede "exit", so decrement
+    // at most once across both events.
+    let slotReleased = false;
+    const releaseSlot = () => {
+      if (!slotReleased) {
+        slotReleased = true;
+        activeExecutions = Math.max(activeExecutions - 1, 0);
+      }
+      processQueue();
+    };
+
     worker.on("message", (data) => {
       job.callback(data);
     });
 
     worker.on("error", (error) => {
+      releaseSlot();
       job.reject(error);
     });
 
     worker.on("exit", (code) => {
-      activeExecutions -= 1;
+      releaseSlot();
       if (code !== 0) {
         job.reject(new Error(`Sandbox worker exited with code ${code}`));
       } else {
         job.resolve();
       }
-      processQueue();
     });
   }
 }
 
+function cleanRunFiles(files) {
+  // Defense in depth (WS layer already validates): drop entries that could
+  // escape /sandbox when packed into the container tar.
+  const locations = Array.isArray(files) ? files : Object.values(files || {});
+  const cleaned = [];
+  for (const location of locations) {
+    if (!location || typeof location !== "object") continue;
+    const folder = typeof location.folder === "string" ? location.folder : "/";
+    const list = Array.isArray(location.files) ? location.files : [];
+    const kept = [];
+    for (const file of list) {
+      if (!file || typeof file !== "object") continue;
+      const name = typeof file.filename === "string" ? file.filename : "";
+      const content = typeof file.content === "string" ? file.content : "";
+      const joined = `${folder}${name}`;
+      if (!name || /\.\.|[\u0000-\u001f\u007f]|^\//.test(joined)) continue;
+      kept.push({ filename: name.slice(0, 200), content: content.slice(0, 512 * 1024) });
+    }
+    if (kept.length > 0) {
+      cleaned.push({ folder, files: kept });
+    }
+    if (cleaned.length >= 50) break;
+  }
+  return cleaned;
+}
+
 async function runLang(lang, files, input = [""], callback) {
   const executions = [];
+  const safeFiles = cleanRunFiles(files);
 
   if (lang === "python") {
     executions.push({
       profile: "python_run",
       cmd: ["python3", "main.py"],
-      files,
+      files: safeFiles,
       stdins: input,
     });
   } else if (lang === "node") {
     executions.push({
       profile: "node_run",
       cmd: ["node", "index.js"],
-      files,
+      files: safeFiles,
       stdins: input,
     });
   } else if (lang === "java") {
     executions.push({
       profile: "java_compile",
       cmd: ["javac", "Main.java"],
-      files,
+      files: safeFiles,
     });
     executions.push({
       profile: "java_run",
@@ -93,7 +139,7 @@ async function runLang(lang, files, input = [""], callback) {
     executions.push({
       profile: "gcc_compile",
       cmd: ["gcc", "main.c", "-o", "main"],
-      files,
+      files: safeFiles,
     });
     executions.push({
       profile: "gcc_run",
@@ -104,7 +150,7 @@ async function runLang(lang, files, input = [""], callback) {
     executions.push({
       profile: "gcc_compile",
       cmd: ["g++", "-pipe", "-O2", "-static", "-o", "main", "main.cpp"],
-      files,
+      files: safeFiles,
     });
     executions.push({
       profile: "gcc_run",
@@ -115,7 +161,7 @@ async function runLang(lang, files, input = [""], callback) {
     executions.push({
       profile: "mono_compile",
       cmd: ["csc", "main.cs"],
-      files,
+      files: safeFiles,
     });
     executions.push({
       profile: "mono_run",
@@ -126,7 +172,7 @@ async function runLang(lang, files, input = [""], callback) {
     executions.push({
       profile: "rust_compile",
       cmd: ["rustc", "main.rs", "-o", "main"],
-      files,
+      files: safeFiles,
     });
     executions.push({
       profile: "rust_run",
@@ -151,7 +197,7 @@ const settings = {
           files: [
             {
               filename: "main.py",
-              content: fs.readFileSync("src/templates/python/main.py").toString(),
+              content: templateFile("python", "main.py"),
             },
           ],
         },
@@ -166,15 +212,11 @@ const settings = {
           files: [
             {
               filename: "index.js",
-              content: fs
-                .readFileSync("src/templates/node/index.js")
-                .toString(),
+              content: templateFile("node", "index.js"),
             },
             {
               filename: "input.js",
-              content: fs
-                .readFileSync("src/templates/node/input.js")
-                .toString(),
+              content: templateFile("node", "input.js"),
             },
           ],
         },
@@ -189,7 +231,7 @@ const settings = {
           files: [
             {
               filename: "Main.java",
-              content: fs.readFileSync("src/templates/java/Main.java").toString(),
+              content: templateFile("java", "Main.java"),
             },
           ],
         },
@@ -204,7 +246,7 @@ const settings = {
           files: [
             {
               filename: "main.c",
-              content: fs.readFileSync("src/templates/c/main.c").toString(),
+              content: templateFile("c", "main.c"),
             },
           ],
         },
@@ -219,7 +261,7 @@ const settings = {
           files: [
             {
               filename: "main.cpp",
-              content: fs.readFileSync("src/templates/c++/main.cpp").toString(),
+              content: templateFile("c++", "main.cpp"),
             },
           ],
         },
@@ -234,7 +276,7 @@ const settings = {
           files: [
             {
               filename: "main.cs",
-              content: fs.readFileSync("src/templates/c#/main.cs").toString(),
+              content: templateFile("c#", "main.cs"),
             },
           ],
         },
@@ -249,7 +291,7 @@ const settings = {
           files: [
             {
               filename: "main.rs",
-              content: fs.readFileSync("src/templates/rust/main.rs").toString(),
+              content: templateFile("rust", "main.rs"),
             },
           ],
         },

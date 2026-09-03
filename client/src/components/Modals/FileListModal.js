@@ -2,13 +2,9 @@ import React from "react";
 import { FileIcon } from 'react-file-icon';
 
 // reactstrap components
-import { 
+import {
   Button,
   Modal,
-  Row,
-  Col,
-  Container,
-  Progress
 } from "reactstrap";
 // core components
 
@@ -165,17 +161,26 @@ function FileListModal({open, isOpen, submit, submitFolder, title = "Files"}){
 
   // https://gist.github.com/yrq110/ebfc2cf66dae63f514bca22c62c40a93
   const humanFileSize = (size) => {
+    if(!size || size <= 0) return '0 B';
     let i = Math.floor( Math.log(size) / Math.log(1024) );
     return ( size / Math.pow(1024, i) ).toFixed(2) * 1 + ' ' + ['B', 'kB', 'MB', 'GB', 'TB'][i];
   }
 
+  const usedMB = (space / 100) * 128;
+  const usedLabel = usedMB < 0.1 && space > 0 ? humanFileSize((space / 100) * 128 * 1024 * 1024) : `${usedMB.toFixed(usedMB < 10 ? 1 : 0)} MB`;
+
   return (
     <>
-      <Modal toggle={() => open(false)} isOpen={isOpen} className="modal-xl">
+      <Modal toggle={() => open(false)} isOpen={isOpen} scrollable>
         <div className="modal-header">
-          <h5 className="modal-title">
-            {title}
-          </h5>
+          <div className="min-w-0">
+            <h5 className="modal-title">
+              {title}
+            </h5>
+            <p className="mt-0.5 truncate font-mono text-[11px] font-medium text-[var(--cs-ink-faint)]" title={cwd}>
+              {cwd}
+            </p>
+          </div>
           <button
             aria-label="Close"
             className="close"
@@ -186,68 +191,93 @@ function FileListModal({open, isOpen, submit, submitFolder, title = "Files"}){
           </button>
         </div>
         <div className="modal-body">
-          <Container>
-            <Row className="file-list-container">
-              {cwd !== "/" && (
-                <Row className="file-list-row w-100" style={{"cursor": "pointer"}} onClick={back}>
-                  <Col className="file-list-icon">
-                    <i className="fas fa-folder fa-4x"></i>
-                  </Col>
-                  <Col className="file-list-desc">
-                    ..
-                  </Col>
-                </Row>
-              )}
-              {folders && folders.map((folder, i) => (
-                <Row key={i} className="file-list-row w-100" style={{"cursor": "pointer"}} onClick={() => setCwd(folder)}>
-                  <Col className="file-list-icon">
-                    <i className="fas fa-folder fa-5x"></i>
-                  </Col>
-                  <Col className="file-list-desc">
+          <div className="mb-3 flex flex-wrap gap-2">
+            <Button size="sm" color="info" onClick={() => setDragDropOptions({submit: upload, multiple: false, key: Math.random()})}>
+              <i className="fas fa-upload mr-1.5" aria-hidden="true" />Upload File
+            </Button>
+            <Button size="sm" color="secondary" onClick={() => setInputOptions({submit: newFolder, title: "New Folder", body: "Enter new folder name:"})}>
+              <i className="fas fa-folder-plus mr-1.5" aria-hidden="true" />New Folder
+            </Button>
+            {(cwd === "/" && submitFolder) && (
+              <Button size="sm" color="success" className="ml-auto" onClick={() => {submitFolder(JSON.parse(JSON.stringify(response.filter(s => s.folder.startsWith(cwd)))), cwd); open(false);}}>
+                <i className="fas fa-check mr-1.5" aria-hidden="true" />Use this folder
+              </Button>
+            )}
+          </div>
+          <div className="file-list-container rounded-xl border border-[var(--cs-border)]">
+            {cwd !== "/" && (
+              <button
+                type="button"
+                onClick={back}
+                className="flex w-full items-center gap-3 border-b border-[var(--cs-border)] px-3 py-2.5 text-left transition-colors hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/[0.04] text-[var(--cs-ink-muted)] dark:bg-white/[0.06]">
+                  <i className="fas fa-turn-up" aria-hidden="true"></i>
+                </span>
+                <span className="text-sm font-semibold text-[var(--cs-ink-muted)]">..</span>
+              </button>
+            )}
+            {folders && folders.map((folder, i) => (
+              <div key={i} className="flex w-full items-center gap-3 border-b border-[var(--cs-border)] px-3 py-2.5 last:border-b-0">
+                <button
+                  type="button"
+                  onClick={() => setCwd(folder)}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--cs-brand-soft)] text-[var(--cs-brand)]">
+                    <i className="fas fa-folder" aria-hidden="true"></i>
+                  </span>
+                  <span className="truncate text-sm font-semibold text-[var(--cs-ink)]">
                     {folder.split("/").pop()}
-                    <div>
-                      {submitFolder && (
-                        <Button size="sm" color="info" onClick={() => {submitFolder(JSON.parse(JSON.stringify(response.filter(s => s.folder.startsWith(folder)))), folder); open(false);}}>Select</Button>
-                      )} 
-                      <Button size="sm" color="danger" onClick={(e) => {delFolder(folder); e.stopPropagation();}}><i className="fas fa-trash"></i></Button>
-                    </div>
-                  </Col>
-                </Row>
-              ))}
-              {files && files.map((file, i) => (
-                <Row key={i} className="file-list-row w-100">
-                  <Col className="file-list-icon">
-                    <FileIcon extension={file.filename.split('.').pop()} />
-                  </Col>
-                  <Col className="file-list-desc">
-                    {file.filename} ({humanFileSize(file.size)})
-                    <div>
-                      {submit && (
-                        <Button size="sm" color="info" onClick={() => {submit(files[i]); open(false);}}>Select</Button>
-                      )}
-                      <Button size="sm" color="info" onClick={() => copyFile(i)}><i className="fas fa-copy"></i></Button>
-                      <Button size="sm" color="danger" onClick={() => delFile(i)}><i className="fas fa-trash"></i></Button>
-                    </div>
-                  </Col>
-                </Row>
-              ))}
-              {(cwd === "/" && files && files.length >= 0 && submitFolder) && (
-                <Button size="sm" color="info" onClick={() => {submitFolder(JSON.parse(JSON.stringify(response.filter(s => s.folder.startsWith(cwd)))), cwd); open(false);}}>Select /</Button>
-              )}
-            </Row>
-            <Row>
-              <Button size="sm" color="info" onClick={() => setDragDropOptions({submit: upload, multiple: false, key: Math.random()})}>Upload File</Button>
-              <Button size="sm" color="danger" onClick={() => setInputOptions({submit: newFolder, title: "New Folder", body: "Enter new folder name:"})}>New Folder</Button>
-            </Row>
-            <Row>
-              <div className="progress-container progress-danger w-100">
-                <span className="progress-badge">Storage Remaining ({parseInt(128 * (1-(space / 100)))} / 128MB)</span>
-                <Progress max="100" value={space}>
-                  <span className="progress-value">{parseInt(space)}%</span>
-                </Progress>
+                  </span>
+                </button>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {submitFolder && (
+                    <Button size="sm" color="info" onClick={() => {submitFolder(JSON.parse(JSON.stringify(response.filter(s => s.folder.startsWith(folder)))), folder); open(false);}}>Select</Button>
+                  )}
+                  <Button size="sm" color="danger" aria-label={`Delete folder ${folder.split("/").pop()}`} onClick={(e) => {delFolder(folder); e.stopPropagation();}}><i className="fas fa-trash" aria-hidden="true"></i></Button>
+                </span>
               </div>
-            </Row>
-          </Container>
+            ))}
+            {files && files.map((file, i) => (
+              <div key={i} className="flex w-full items-center gap-3 border-b border-[var(--cs-border)] px-3 py-2.5 last:border-b-0">
+                <span className="h-9 w-9 shrink-0">
+                  <FileIcon extension={file.filename.split('.').pop()} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-[var(--cs-ink)]" title={file.filename}>
+                    {file.filename}
+                  </span>
+                  <span className="block text-[11px] font-medium text-[var(--cs-ink-faint)]">
+                    {humanFileSize(file.size)}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {submit && (
+                    <Button size="sm" color="info" onClick={() => {submit(files[i]); open(false);}}>Select</Button>
+                  )}
+                  <Button size="sm" color="secondary" aria-label={`Copy link for ${file.filename}`} onClick={() => copyFile(i)}><i className="fas fa-copy" aria-hidden="true"></i></Button>
+                  <Button size="sm" color="danger" aria-label={`Delete ${file.filename}`} onClick={() => delFile(i)}><i className="fas fa-trash" aria-hidden="true"></i></Button>
+                </span>
+              </div>
+            ))}
+            {(!folders || folders.length === 0) && (!files || files.length === 0) && (
+              <p className="px-4 py-8 text-center text-sm text-[var(--cs-ink-faint)]">
+                This folder is empty. Upload a file or create a subfolder to get started.
+              </p>
+            )}
+          </div>
+          <div className="mt-3 rounded-xl border border-[var(--cs-border)] bg-black/[0.02] px-3 py-2.5 dark:bg-white/[0.03]">
+            <div className="mb-1.5 flex items-center justify-between gap-2 text-[11px] font-semibold">
+              <span className="text-[var(--cs-ink-muted)]">
+                {usedLabel} of 128 MB used
+              </span>
+              <span className="text-[var(--cs-ink-faint)]">{Math.round(space)}%</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/10 dark:bg-white/10" role="progressbar" aria-valuenow={Math.round(space)} aria-valuemin="0" aria-valuemax="100" aria-label="Storage used">
+              <div className="h-full rounded-full bg-[var(--cs-brand)] transition-all" style={{ width: `${Math.min(space, 100)}%` }} />
+            </div>
+          </div>
         </div>
       </Modal>
     </>

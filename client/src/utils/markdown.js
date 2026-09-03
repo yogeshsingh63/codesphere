@@ -41,13 +41,13 @@ const markdown = (content) => {
       if (tokens[idx].type === 'container_youtube_open') {
         const matches = tokens[idx].info.trim().match(/^youtube\s*\[(.*)]$/)
         if (matches && matches[1]) {
-          let id = getYoutubeVideoId(matches[1]);
+          const id = getYoutubeVideoId(matches[1]);
           if(!id) {
             return `<span style="color: red">Error: Invalid YouTube URL</span><div class="text-center font-weight-light">`;
           }
 
-          let wrapper = document.createElement("div");
-          let iframe = document.createElement("iframe");
+          const wrapper = document.createElement("div");
+          const iframe = document.createElement("iframe");
 
           wrapper.className = "embed-responsive embed-responsive-16by9 section-embed";
           iframe.className = "embed-responsive-item b-0";
@@ -75,11 +75,11 @@ const markdown = (content) => {
       if (tokens[idx].type === 'container_video_open') {
         const matches = tokens[idx].info.trim().match(/^video\s*\[(.*)]$/)
         if (matches && matches[1]) {
-          let url = matches[1];
+          const url = matches[1];
           
-          let wrapper = document.createElement("div");
-          let video = document.createElement("video");
-          let source = document.createElement("source");
+          const wrapper = document.createElement("div");
+          const video = document.createElement("video");
+          const source = document.createElement("source");
 
           wrapper.className = "embed-responsive embed-responsive-16by9 section-embed";
           video.className = "embed-responsive-item b-0";

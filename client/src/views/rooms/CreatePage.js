@@ -8,9 +8,10 @@ import { useAuthState } from "context/auth.js";
 import { useAlertState } from "context/alert.js";
 
 // core components
-import AuthNavbar from "components/Navbars/AuthNavbar.js";
+import Navbar from "components/Navbars/Navbar.js";
 import ProfilePageHeader from "components/Headers/ProfilePageHeader.js";
 import DefaultFooter from "components/Footers/DefaultFooter.js";
+import CopyChip from "components/UI/CopyChip.js";
 
 import SectionCard from "components/Cards/SectionCard.js";
 import PaginatedTable from "components/Form/PaginatedTable.js";
@@ -21,7 +22,7 @@ import ImportModal from "components/Modals/ImportModal.js";
 
 function CreatePage() {
   const history = useHistory();
-  const { user, isSignedIn } = useAuthState();
+  const { user } = useAuthState();
   const { setErrorOptions, setMessageOptions, setInputOptions, setConfirmOptions } = useAlertState();
 
   const isEditing = useLocation().pathname.startsWith("/rooms/edit/");
@@ -82,19 +83,37 @@ function CreatePage() {
     setSections(newSections);
   }
 
+  const [saving, setSaving] = React.useState(false);
+
   const finishImport = (json) => {
-    let data = JSON.parse(json);
-    setTitle(data.title);
-    setDesc(data.desc);
-    setSections(data.sections);
-    setPublic(data.public);
+    let data;
+    try {
+      data = typeof json === "string" ? JSON.parse(json) : json;
+    } catch {
+      setErrorOptions({ body: "Invalid import data. Please check the file format." });
+      return;
+    }
+    if (!data || typeof data !== "object") {
+      setErrorOptions({ body: "Invalid import data." });
+      return;
+    }
+    setTitle(data.title ?? "");
+    setDesc(data.desc ?? "");
+    setSections(Array.isArray(data.sections) ? data.sections : []);
+    setPublic(Boolean(data.public));
 
     if(data.members)
       setMembers(data.members);
   }
 
   const saveRoom = () => {
-    let roomData = { title, desc, sections: sectionsRef.current, "public": isPublic };
+    if (saving) return;
+    if (!title.trim() || !desc.trim()) {
+      setErrorOptions({ body: "Title and description are required." });
+      return;
+    }
+    setSaving(true);
+    let roomData = { title: title.trim(), desc: desc.trim(), sections: sectionsRef.current, "public": isPublic };
     fetch(process.env.REACT_APP_API_URL + (isEditing ? "/room/edit" : "/room/create"), {
       method: "POST",
       headers: {
@@ -108,7 +127,9 @@ function CreatePage() {
       else {
         setErrorOptions({body: json.response});
       }
-    });
+    }).catch(() => {
+      setErrorOptions({ body: "Network error saving room. Please try again." });
+    }).finally(() => setSaving(false));
   }
 
   const deleteRoom = (confirm) => {
@@ -129,6 +150,8 @@ function CreatePage() {
       else {
         setErrorOptions({body: json.response, submit: () => {history.push("/home")}});
       }
+    }).catch(() => {
+      setErrorOptions({ body: "Network error deleting room." });
     });
   }
 
@@ -145,11 +168,7 @@ function CreatePage() {
   };
 
   React.useEffect(() => {
-    document.body.classList.add("profile-page");
-    document.body.classList.add("sidebar-collapse");
-    document.documentElement.classList.remove("nav-open");
     window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
 
     if(isEditing) {
       fetch(process.env.REACT_APP_API_URL + `/room/info`, {
@@ -177,28 +196,20 @@ function CreatePage() {
         else {
           setErrorOptions({body: "No room was found with that code.", submit: () => {history.push("/home")}});
         }
+      }).catch(() => {
+        setErrorOptions({ body: "Network error loading room.", submit: () => { history.push("/home"); } });
       });
     }
-
-    return function cleanup() {
-      document.body.classList.remove("profile-page");
-      document.body.classList.remove("sidebar-collapse");
-    };
   }, [code, history, isEditing, user, setErrorOptions]);
 
   React.useEffect(() => {
     sectionsRef.current = sections;
   }, [sections]);
 
-  if(!isSignedIn) {
-    history.push("/");
-    return <></>;
-  }
-
   return (
     <>
-      <AuthNavbar />
-      <div className="wrapper bg-[#faf9f6] min-h-screen pt-16 flex flex-col justify-between">
+      <Navbar />
+      <div className="bg-[var(--cs-surface)] min-h-screen pt-16 flex flex-col justify-between">
         <EditSection open={setEditModal} isOpen={editModal} section={sectionRef.current} submit={finishSection} key={sectionRef.current.title} />
         <ExportModal open={setExportModal} isOpen={exportModal} data={JSON.stringify({title, desc, sections: sectionsRef.current, "public": isPublic}, null, " ".repeat(4))} />
         <ImportModal open={setImportModal} isOpen={importModal} submit={finishImport} />
@@ -207,48 +218,50 @@ function CreatePage() {
           <ProfilePageHeader />
           <div className="py-12">
             <div className="container mx-auto px-6 max-w-4xl">
-              <h3 className="text-xl font-bold text-stone-900 mb-2 flex items-center gap-2">
-                <i className="fas fa-tools text-[#c2410c]"></i>
+              <h3 className="text-xl font-bold text-[var(--cs-ink)] mb-2 flex items-center gap-2">
+                <i className="fas fa-tools text-[var(--cs-brand)]"></i>
                 <span>Room {isEditing ? "Editor": "Creator"}</span>
               </h3>
               {isEditing && (
-                <p className="text-xs text-stone-500 mb-6 font-medium">
-                  Room Code: <strong className="text-[#c2410c]">{code}</strong>
-                </p>
+                <div className="mb-6 flex flex-wrap items-center gap-2 text-xs font-medium text-[var(--cs-ink-muted)]">
+                  <span>Room code:</span>
+                  <CopyChip value={code} label="room code" />
+                  <span className="text-[var(--cs-ink-faint)]">Share it so learners can join.</span>
+                </div>
               )}
               
-              <h4 className="text-sm font-bold text-stone-800 mb-4 tracking-tight">Room Details</h4>
-              <div className="bg-white border border-stone-200/60 rounded-3xl p-6 shadow-sm mb-8">
+              <h4 className="text-sm font-bold text-[var(--cs-ink)] mb-4 tracking-tight">Room Details</h4>
+              <div className="bg-[var(--cs-surface-elevated)] border border-[var(--cs-border)]/60 rounded-3xl p-6 shadow-sm mb-8">
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="title-input" className="text-xs font-semibold text-stone-700">Room Title</label>
+                    <label htmlFor="title-input" className="text-xs font-semibold text-[var(--cs-ink)]">Room Title</label>
                     <input
                       placeholder="Enter title"
                       type="text"
                       id="title-input"
                       value={title}
                       onChange={e => setTitle(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm bg-stone-50/50 text-stone-900 transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[var(--cs-border)] focus:outline-none focus:ring-2 focus:ring-[var(--cs-brand)] focus:border-transparent text-sm bg-[var(--cs-surface)] text-[var(--cs-ink)] transition-all"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="desc-input" className="text-xs font-semibold text-stone-700">Description</label>
+                    <label htmlFor="desc-input" className="text-xs font-semibold text-[var(--cs-ink)]">Description</label>
                     <input
                       placeholder="Enter description"
                       type="text"
                       id="desc-input"
                       value={desc}
                       onChange={e => setDesc(e.target.value)}
-                      className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm bg-stone-50/50 text-stone-900 transition-all"
+                      className="w-full px-4 py-2.5 rounded-xl border border-[var(--cs-border)] focus:outline-none focus:ring-2 focus:ring-[var(--cs-brand)] focus:border-transparent text-sm bg-[var(--cs-surface)] text-[var(--cs-ink)] transition-all"
                     />
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-stone-700">
+                    <label className="flex items-center gap-2.5 cursor-pointer text-xs font-semibold text-[var(--cs-ink)]">
                       <input
                         type="checkbox"
                         checked={isPublic}
                         onChange={e => setPublic(e.target.checked)}
-                        className="w-4 h-4 rounded border-stone-300 text-[#c2410c] focus:ring-[#c2410c]"
+                        className="w-4 h-4 rounded border-[var(--cs-border)] text-[var(--cs-brand)] focus:ring-[var(--cs-brand)]"
                       />
                       <span>Public Room</span>
                     </label>
@@ -256,7 +269,7 @@ function CreatePage() {
                 </div>
               </div>
 
-              <h4 className="text-sm font-bold text-stone-800 mb-4 tracking-tight">Sections</h4>
+              <h4 className="text-sm font-bold text-[var(--cs-ink)] mb-4 tracking-tight">Sections</h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
                 <SortableContainer onSortEnd={onSortEnd} axis="xy">
                   <div className="contents">
@@ -275,16 +288,16 @@ function CreatePage() {
 
               {(isEditing && members && members.length > 0) && (
                 <div className="mt-10">
-                  <h4 className="text-sm font-bold text-stone-800 mb-1 tracking-tight">Members</h4>
-                  <p className="text-xs text-stone-500 mb-4 font-medium">Total enrolled: {members.length} </p>
+                  <h4 className="text-sm font-bold text-[var(--cs-ink)] mb-1 tracking-tight">Members</h4>
+                  <p className="text-xs text-[var(--cs-ink-muted)] mb-4 font-medium">Total enrolled: {members.length} </p>
 
                   <PaginatedTable
                     columns={[
                       {title: "Username", field: "username", formatter: (item) => (
-                        <Link to={"/profile/" + item.username} className="text-[#c2410c] hover:underline font-semibold">{item.username}</Link>
+                        <Link to={"/profile/" + item.username} className="text-[var(--cs-brand)] hover:underline font-semibold">{item.username}</Link>
                       )},
                       {title: "Completion", field: "completed", formatter: (item) => (
-                        <span className="text-xs text-stone-600 font-medium">
+                        <span className="text-xs text-[var(--cs-ink-muted)] font-medium">
                           {item.completed ? item.completed.length : 0} / {sections.length} sections
                         </span>
                       )}
@@ -294,11 +307,11 @@ function CreatePage() {
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-10 pt-6 border-t border-stone-200/60">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-10 pt-6 border-t border-[var(--cs-border)]/60">
                 <button 
                   type="button" 
                   onClick={() => history.push("/home")} 
-                  className="px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-100/60 rounded-xl text-xs font-semibold transition-all self-start sm:self-auto"
+                  className="px-4 py-2 border border-[var(--cs-border)] text-[var(--cs-ink-muted)] hover:bg-black/5 rounded-xl text-xs font-semibold transition-all self-start sm:self-auto"
                 >
                   &larr; Back
                 </button>
@@ -306,14 +319,14 @@ function CreatePage() {
                   <button 
                     type="button" 
                     onClick={() => setExportModal(true)} 
-                    className="px-4 py-2 bg-stone-900 hover:bg-stone-850 text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
+                    className="px-4 py-2 bg-[var(--cs-ink)] hover:bg-[var(--cs-ink)] text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
                   >
                     Export
                   </button>
                   <button 
                     type="button" 
                     onClick={() => setImportModal(true)} 
-                    className="px-4 py-2 border border-stone-200 text-stone-600 hover:bg-stone-100/60 rounded-xl text-xs font-semibold transition-all"
+                    className="px-4 py-2 border border-[var(--cs-border)] text-[var(--cs-ink-muted)] hover:bg-black/5 rounded-xl text-xs font-semibold transition-all"
                   >
                     Import
                   </button>
@@ -327,7 +340,7 @@ function CreatePage() {
                         yesColor: "danger",
                         noColor: "primary"
                       })} 
-                      className="px-4 py-2 border border-red-200 text-red-650 hover:bg-red-50/50 rounded-xl text-xs font-semibold transition-all"
+                      className="px-4 py-2 border border-red-200 text-red-700 hover:bg-red-50/50 rounded-xl text-xs font-semibold transition-all"
                     >
                       Delete
                     </button>
@@ -335,7 +348,7 @@ function CreatePage() {
                   <button 
                     type="button" 
                     onClick={saveRoom} 
-                    className="px-4 py-2 bg-[#c2410c] hover:bg-[#a13207] text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
+                    className="px-4 py-2 bg-[var(--cs-brand)] hover:bg-[var(--cs-brand-hover)] text-white rounded-xl text-xs font-semibold shadow-xs transition-all"
                   >
                     Save
                   </button>

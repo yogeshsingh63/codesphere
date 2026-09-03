@@ -12,30 +12,38 @@ function failure(response) {
 	}
 }
 
-const MONGOID_REGEX = /^(?=[a-f\d]{24}$)(\d+[a-f]|[a-f]+\d)/i;
+const SENSITIVE_KEYS = new Set(["__v", "_id", "password"]);
 
-function sanitize(obj, keys = [], n = 0) {
-	if(n > 10)
-		return;
+function sanitize(obj, extraKeys = [], depth = 0) {
+	if (depth > 10)
+		return undefined;
 
-	obj = JSON.parse(JSON.stringify(obj));
+	if (obj === null || obj === undefined) return obj;
+	if (typeof obj !== "object") return obj;
 
-	keys = [...keys, "__v", "_id", "password"];
+	if (Array.isArray(obj)) {
+		return obj.map((item) => sanitize(item, extraKeys, depth + 1)).filter((v) => v !== undefined);
+	}
 
-	for(let key in obj) {
-		if(keys.includes(key)) {
-			obj[key] = null;
-		}
-		else if(obj[key] && typeof obj[key] === "string" && MONGOID_REGEX.test(obj[key])) {
-			obj[key] = null;
-		}
-		else if(obj[key] && typeof obj[key] === "object") {
-			obj[key] = sanitize(obj[key], keys, n+1);
+	// Avoid double-stringify loss: shallow-clone via structured path
+	let clone;
+	try {
+		clone = JSON.parse(JSON.stringify(obj));
+	} catch {
+		return undefined;
+	}
+
+	const blocked = new Set([...SENSITIVE_KEYS, ...extraKeys]);
+	for (const key of Object.keys(clone)) {
+		if (blocked.has(key)) {
+			delete clone[key];
+		} else if (clone[key] && typeof clone[key] === "object") {
+			const nested = sanitize(clone[key], extraKeys, depth + 1);
+			if (nested === undefined) delete clone[key];
+			else clone[key] = nested;
 		}
 	}
-	return JSON.parse(JSON.stringify(obj, (k, v) => {
-  		if (v !== null) return v
-	}));
+	return clone;
 }
 
 export default { success, failure, sanitize }

@@ -8,7 +8,7 @@ import File from "../models/File.js";
 import authenticate from "../src/authenticate.js";
 
 import response from "../src/response.js";
-import { asyncHandler, buildUserResponse } from "../src/http.js";
+import { asyncHandler, authorNameMap, buildUserResponse, projectRoomsForClient } from "../src/http.js";
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ router.get(
   "/info",
   asyncHandler(async (req, res) => {
     const username = req.query.username;
-    if (typeof username !== "string" || username.length < 6) {
+    if (typeof username !== "string" || username.length < 6 || username.length > 64) {
       return res.json(
         response.failure("Username must be 6 characters at minimum.")
       );
@@ -57,6 +57,34 @@ router.get(
   })
 );
 
+const USERNAME_RE = /^[a-zA-Z0-9_]+$/;
+
+function validUsername(username) {
+  return (
+    typeof username === "string" &&
+    username.length >= 6 &&
+    username.length <= 30 &&
+    USERNAME_RE.test(username)
+  );
+}
+
+function validPassword(password) {
+  // bcrypt silently truncates past 72 bytes; cap input to keep CPU bounded.
+  return (
+    typeof password === "string" &&
+    password.length >= 8 &&
+    password.length <= 72
+  );
+}
+
+function validEmail(email) {
+  return (
+    typeof email === "string" &&
+    email.length <= 254 &&
+    validator.isEmail(email)
+  );
+}
+
 router.post(
   "/update_info",
   authenticate.requiresLogin,
@@ -66,9 +94,9 @@ router.post(
     const username = req.body.username;
     const user = req.user;
 
-    if (typeof username !== "string" || username.length < 6) {
+    if (!validUsername(username)) {
       return res.json(
-        response.failure("Username must be 6 characters at minimum.")
+        response.failure("Username must be 6-30 letters, numbers, or underscores.")
       );
     }
 
@@ -83,11 +111,15 @@ router.post(
     }
 
     if (typeof name === "string" && user.name !== name) {
+      if (name.length > 30) {
+        return res.json(response.failure("Name must be at most 30 characters."));
+      }
       user.name = name;
     }
 
-    if (user.email !== email) {
-      if (typeof email !== "string" || !validator.isEmail(email)) {
+    // Only touch email when the client actually sends a new one.
+    if (email !== undefined && user.email !== email) {
+      if (!validEmail(email)) {
         return res.json(response.failure("Invalid email address."));
       }
       user.email = email;
@@ -107,15 +139,19 @@ router.post(
 
     if (
       typeof currentPassword !== "string" ||
-      typeof newPassword !== "string" ||
-      newPassword.length < 8
+      currentPassword.length === 0 ||
+      currentPassword.length > 72 ||
+      !validPassword(newPassword)
     ) {
       return res.json(
-        response.failure("Password must be 8 characters at minimum.")
+        response.failure("Password must be 8-72 characters.")
       );
     }
 
     const user = await User.findById(req.user._id).select("+password").exec();
+    if (!user) {
+      return res.json(response.failure("User not found."));
+    }
     const matches = await bcrypt.compare(currentPassword, user.password);
     if (!matches) {
       return res.json(response.failure("Incorrect password."));
@@ -136,6 +172,9 @@ router.post(
     if (typeof bio !== "string") {
       return res.json(response.failure("Bio must be a string."));
     }
+    if (bio.length > 300) {
+      return res.json(response.failure("Bio must be at most 300 characters."));
+    }
 
     req.user.bio = bio;
     await req.user.save();
@@ -151,10 +190,13 @@ router.post(
     const code = req.body.code;
     const user = req.user;
 
-    if (!code) {
+    if (code === undefined || code === null || code === "") {
       user.profilepic = null;
       await user.save();
       return res.json(response.success("Profile picture removed."));
+    }
+    if (typeof code !== "string" || code.length > 100) {
+      return res.json(response.failure("That file was not found."));
     }
 
     const count = await File.countDocuments({ code, owner: user._id });
@@ -173,25 +215,18 @@ router.post(
   asyncHandler(async (req, res) => {
     const { username, password, email } = req.body;
 
-    if (typeof username !== "string" || username.length < 6) {
+    if (!validUsername(username)) {
       return res.json(
-        response.failure("Username must be 6 characters at minimum.")
+        response.failure("Username must be 6-30 letters, numbers, or underscores.")
       );
     }
-    if (typeof password !== "string" || password.length < 8) {
+    if (!validPassword(password)) {
       return res.json(
-        response.failure("Password must be 8 characters at minimum.")
+        response.failure("Password must be 8-72 characters.")
       );
     }
-    if (typeof email !== "string" || !validator.isEmail(email)) {
+    if (!validEmail(email)) {
       return res.json(response.failure("Invalid email address."));
-    }
-    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      return res.json(
-        response.failure(
-          "Username must consist of only letters, numbers, and underscores."
-        )
-      );
     }
 
     const hash = await bcrypt.hash(password, 12);
@@ -218,7 +253,12 @@ router.post("/login", (req, res, next) => {
       console.error("[LOGIN ERROR] No user found/matched. Info:", info);
       return res.json(response.failure("Incorrect username or password."));
     }
-    return res.json(response.success(authenticate.sign(user)));
+    try {
+      return res.json(response.success(authenticate.sign(user)));
+    } catch (error) {
+      console.error("[LOGIN ERROR] Failed to sign token:", error);
+      return res.json(response.failure("There was an error signing in."));
+    }
   })(req, res, next);
 });
 
@@ -231,13 +271,10 @@ router.post(
   authenticate.requiresLogin,
   asyncHandler(async (req, res) => {
     const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
-    return res.json(
-      response.success({
-        enrolled: user.enrolled,
-        created: user.created,
-        completed: user.completed,
-      })
-    );
+    // Project to summaries only: full section docs would leak
+    // flags, quiz answers and coding checks to enrolled members.
+    const names = await authorNameMap(User, [...user.enrolled, ...user.created]);
+    return res.json(response.success(projectRoomsForClient(user, names)));
   })
 );
 
@@ -246,7 +283,8 @@ router.post(
   authenticate.requiresLogin,
   asyncHandler(async (req, res) => {
     const user = await authenticate.getUser({ _id: req.user._id }, ["rooms"]);
-    return res.json(response.success(buildUserResponse(user)));
+    const names = await authorNameMap(User, [...user.enrolled, ...user.created]);
+    return res.json(response.success(buildUserResponse(user, projectRoomsForClient(user, names))));
   })
 );
 

@@ -11,41 +11,36 @@ function LoginPage() {
   const history = useHistory();
 
   React.useEffect(() => {
-    document.body.classList.add("login-page");
-    document.body.classList.add("sidebar-collapse");
-    document.documentElement.classList.remove("nav-open");
     window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
-
-    return function cleanup() {
-      document.body.classList.remove("login-page");
-      document.body.classList.remove("sidebar-collapse");
-    };
   }, []);
 
+  React.useEffect(() => {
+    if (isSignedIn) history.replace("/home");
+  }, [isSignedIn, history]);
+
   if(isSignedIn) {
-    history.push("/home");
-    return <></>;
+    return null;
   }
 
   return (
     <>
       <Navbar />
-      <div 
-        className="page-header relative flex items-center justify-center min-h-screen py-24 bg-stone-50"
+      <main
+        id="main"
+        className="relative flex items-center justify-center min-h-screen py-24 bg-[var(--cs-surface)]"
         style={{
           backgroundImage: "url(" + asset("assets/img/modern_bg_abstract.png") + ")",
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         }}
       >
-        <div className="absolute inset-0 bg-stone-900/5 pointer-events-none" />
+        <div className="absolute inset-0 bg-black/5 dark:bg-black/40 pointer-events-none" aria-hidden="true" />
         <div className="container mx-auto px-6 relative z-10 flex justify-center">
           <div className="w-full max-w-md">
             <LoginForm />
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }

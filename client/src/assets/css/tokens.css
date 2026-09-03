@@ -1,0 +1,145 @@
+:root {
+  --cs-brand: #4f46e5;
+  --cs-brand-hover: #4338ca;
+  --cs-brand-soft: #eef2ff;
+  --cs-brand-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --cs-surface: #eceff4;
+  --cs-surface-elevated: #ffffff;
+  --cs-ink: #0f172a;
+  --cs-ink-muted: #334155;
+  --cs-ink-faint: #64748b;
+  --cs-border: #d3dae6;
+  --cs-border-strong: #b9c3d6;
+  --cs-ink-inverted: #f8fafc;
+  --cs-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 14px -4px rgba(15, 23, 42, 0.1);
+  --cs-card-shadow-hover: 0 2px 4px rgba(15, 23, 42, 0.08), 0 12px 32px -8px rgba(79, 70, 229, 0.22);
+  --cs-code-bg: #0f172a;
+  --cs-code-fg: #e2e8f0;
+  --cs-success: #15803d;
+  --cs-warning: #b45309;
+  --cs-danger: #be123c;
+  --cs-ring: rgba(79, 70, 229, 0.25);
+}
+
+.dark {
+  --cs-brand: #818cf8;
+  --cs-brand-hover: #a5b4fc;
+  --cs-brand-soft: rgba(129, 140, 248, 0.12);
+  --cs-brand-gradient: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+  --cs-surface: #070d1a;
+  --cs-surface-elevated: #101a30;
+  --cs-ink: #f1f5f9;
+  --cs-ink-muted: #cbd5e1;
+  --cs-ink-faint: #7d8aa0;
+  --cs-border: #22304d;
+  --cs-border-strong: #31405f;
+  --cs-ink-inverted: #0f172a;
+  --cs-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px -4px rgba(0, 0, 0, 0.5);
+  --cs-card-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.4), 0 12px 32px -8px rgba(129, 140, 248, 0.3);
+  --cs-code-bg: #020617;
+  --cs-code-fg: #e2e8f0;
+  --cs-ring: rgba(129, 140, 248, 0.35);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--cs-surface);
+  color: var(--cs-ink);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+::selection {
+  background: var(--cs-brand);
+  color: #fff;
+}
+
+/* Accessible focus */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--cs-brand);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Skip link */
+.cs-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100000;
+  background: var(--cs-ink);
+  color: var(--cs-surface);
+  padding: 0.75rem 1rem;
+  border-radius: 0 0 12px 0;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.cs-skip-link:focus {
+  left: 0;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+/* Real elevation for cards/buttons (override flat Tailwind defaults) */
+.shadow-sm, .shadow {
+  box-shadow: var(--cs-card-shadow);
+}
+.hover\:shadow-md:hover, .hover\:shadow-lg:hover, .hover\:shadow-xl:hover {
+  box-shadow: var(--cs-card-shadow-hover);
+}
+
+/* Line clamp helpers (no plugin needed) */
+.cs-clamp-1, .cs-clamp-2, .cs-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cs-clamp-1 { -webkit-line-clamp: 1; }
+.cs-clamp-2 { -webkit-line-clamp: 2; }
+.cs-clamp-3 { -webkit-line-clamp: 3; }
+
+/* Subtle SaaS grid backdrop for heroes */
+.cs-hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(100, 116, 139, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(100, 116, 139, 0.14) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 35%, transparent 75%);
+}
+.dark .cs-hero-grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+}
+
+/* Gentle float for hero mockups */
+@keyframes cs-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.cs-float {
+  animation: cs-float 7s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cs-float { animation: none; }
+  html { scroll-behavior: auto; }
+}

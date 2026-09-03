@@ -54,7 +54,7 @@ function InputModal({ open, isOpen, submit, title = "Input Data", body = "Enter 
               value={data || value}
               onChange={e => setData(e.target.value)}
               ref={inputRef}
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[#c2410c] focus:border-transparent text-sm text-stone-900 bg-stone-50/50"
+              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:outline-none focus:ring-2 focus:ring-[var(--cs-brand)] focus:border-transparent text-sm text-stone-900 bg-stone-50/50"
               {...inputOptions}
             />
           </form>
@@ -73,7 +73,7 @@ function InputModal({ open, isOpen, submit, title = "Input Data", body = "Enter 
             <button
               type="button"
               onClick={finish}
-              className="px-4 py-2 bg-[#c2410c] hover:bg-[#a13207] text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
+              className="px-4 py-2 bg-[var(--cs-brand)] hover:bg-[var(--cs-brand-hover)] text-white rounded-xl text-xs font-semibold transition-all shadow-sm"
             >
               {button}
             </button>
@@ -84,4 +84,4 @@ function InputModal({ open, isOpen, submit, title = "Input Data", body = "Enter 
   );
 }
 
-export default InputModal;
+export default InputModal;

@@ -16,8 +16,9 @@ export default function fetchWithAuth(url, options = {}) {
 	}
 
 	if(typeof window !== 'undefined' && (!options.headers.Authorization && !options.noToken)) {
-		if(cookies.get("authToken"))
-			options.headers.Authorization = cookies.get("authToken");
+		const token = cookies.get("authToken");
+		if(token)
+			options.headers.Authorization = `Bearer ${token}`;
 	}
 
 	return fetch(url, options);

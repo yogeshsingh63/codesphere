@@ -15,19 +15,46 @@ const compare = (input1 = "", input2 = "") => {
 };
 
 const regexCompare = (regex, input, multiline = true, fail = false) => {
-  const matcher = new RE2(regex);
-  matcher.multiline = multiline;
-  return matcher.test(input) === !fail;
+  try {
+    const flags = multiline ? "m" : "";
+    const matcher = new RE2(regex, flags);
+    return matcher.test(input ?? "") === !fail;
+  } catch {
+    return fail === true;
+  }
+};
+
+const idOf = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    if (value._id) return String(value._id);
+    if (value.code) return String(value.code);
+    return "";
+  }
+  return String(value);
 };
 
 const complete = async (user, room, section) => {
-  let index = user.completed.findIndex((entry) => entry.room.code === room.code);
-  if (index === -1) {
-    index = user.completed.push({ room: room._id, sections: [] }) - 1;
+  // Entries may hold populated docs OR bare ObjectIds (freshly pushed),
+  // so compare by _id first and fall back to code.
+  const roomId = String(room._id);
+  let entry = user.completed.find((candidate) => {
+    const rid = idOf(candidate.room);
+    return rid !== "" && (rid === roomId || (room.code && rid === room.code));
+  });
+  if (!entry) {
+    user.completed.push({ room: room._id, sections: [] });
+    entry = user.completed[user.completed.length - 1];
   }
 
-  if (!user.completed[index].sections.find((item) => item.code === section.code)) {
-    user.completed[index].sections.push(section._id);
+  const sectionId = String(section._id);
+  const has = (entry.sections || []).some((item) => {
+    const sid = idOf(item);
+    return sid !== "" && (sid === sectionId || (section.code && sid === section.code));
+  });
+  if (!has) {
+    entry.sections.push(section._id);
     await user.save();
   }
 };

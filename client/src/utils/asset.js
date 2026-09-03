@@ -9,6 +9,9 @@ export default function asset(path) {
   if (modules[key]) {
     return modules[key];
   }
-  console.warn(`[asset] Not found: ${key}`);
+  if (import.meta.env?.DEV) {
+    // eslint-disable-next-line no-console
+    console.warn(`[asset] Not found: ${key}`);
+  }
   return '';
 }

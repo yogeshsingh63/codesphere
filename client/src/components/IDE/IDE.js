@@ -1,14 +1,5 @@
 import React from "react";
 import {Controlled as CodeMirror} from 'react-codemirror2';
-import { useHistory } from "react-router-dom";
-
-import {
-  Col,
-  Spinner,
-  Button,
-  UncontrolledTooltip,
-  Badge
-} from "reactstrap";
 
 import 'codemirror/lib/codemirror.css';
 import 'codemirror/theme/material.css';
@@ -20,16 +11,53 @@ import 'codemirror/mode/rust/rust';
 
 import IDEFiles from "components/IDE/IDEFiles.js";
 
-import { useAuthState } from "context/auth.js";
 import { useAlertState } from "context/alert.js";
 
 import storage from "utils/storage.js";
 import fetch from "utils/fetch.js";
 
+function buildWsUrl(apiUrl, token) {
+  try {
+    const base = (apiUrl || "").replace(/\/+$/, "");
+    const wsBase = base.replace(/^https:/i, "wss:").replace(/^http:/i, "ws:");
+    return `${wsBase}/ws?token=${encodeURIComponent(token)}`;
+  } catch {
+    return null;
+  }
+}
+
+function IdeButton({ id, title, onClick, disabled, children }) {
+  return (
+    <button
+      type="button"
+      id={id}
+      title={title}
+      aria-label={title}
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-40 text-white text-xs transition-colors"
+    >
+      {children}
+    </button>
+  );
+}
+
 function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room, section, files, lang, collabCode, base, size="normal", onSave = () => {}, onComplete = () => {}}) {
-  const history = useHistory();
-  const { isSignedIn, token } = useAuthState();
   const { setInputOptions, setConfirmOptions, setSelectOptions, setErrorOptions } = useAlertState();
+  const token = React.useMemo(() => {
+    try {
+      const raw = sessionStorage.getItem("auth");
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data?.token) return data.token;
+      }
+    } catch {}
+    try {
+      const match = document.cookie.match(/(?:^|; )authToken=([^;]*)/);
+      if (match) return decodeURIComponent(match[1]);
+    } catch {}
+    return null;
+  }, []);
 
   const [status, setStatus] = React.useState("disconnected");
   const [ws, setWS] = React.useState(null);
@@ -48,10 +76,15 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
       return;
     }
 
-    let socket = new WebSocket(
-      process.env.REACT_APP_API_URL.replace("https", "wss").replace("http", "ws") +
-      "/ws?token=" + encodeURIComponent(token)
-    );
+    const url = buildWsUrl(process.env.REACT_APP_API_URL, token);
+    if (!url) return;
+    let socket;
+    try {
+      socket = new WebSocket(url);
+    } catch {
+      setStatus("disconnected");
+      return;
+    }
 
     socket.onopen = () => {
       setStatus(prev => prev === "disconnected" ? "connected" : prev);
@@ -125,7 +158,7 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
       else if(data.type === "collab") {
         setCollab(true);
         if(data.meta === "error") {
-          setErrorOptions({body: data.msg, submit: () => history.push("/home")});
+          setErrorOptions({body: data.msg});
         }
         else if(data.meta === "create") {
           setInputOptions({value: window.location.origin + "/ide?collab=" + data.msg, title: "Collab URL", body: "Send this URL to someone you want to share your code with."});
@@ -140,7 +173,7 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
         }
       }
     }
-  }, [ws, history, onComplete, setErrorOptions, setInputOptions]);
+  }, [ws, onComplete, setErrorOptions, setInputOptions]);
 
   React.useEffect(() => {
     if(!section || !collab || status === "disconnected")
@@ -173,13 +206,20 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
   }
 
   React.useEffect(() => {
+    let cancelled = false;
     fetch(process.env.REACT_APP_API_URL + "/code/langs")
     .then(resp => resp.json())
     .then(async (json) => {
+      if(cancelled) return;
       if(json.success) {
-        let langs = json.response;
+        let langs = Array.isArray(json.response) ? json.response : [];
         if(lang) {
-          langs = [json.response.find(l => l.lang === lang)];
+          const found = langs.find(l => l.lang === lang);
+          langs = found ? [found] : [];
+        }
+        if (langs.length === 0) {
+          setErrorOptions({ body: `Language "${lang || "unknown"}" is not available.` });
+          return;
         }
 
         const loadFiles = async () => {
@@ -187,7 +227,17 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
             for(let i = 0; i < location.files.length; i++) {
               if(!location.folder.endsWith("/"))
                 location.folder += "/";
-              location.files[i].content = await (await fetch(process.env.REACT_APP_API_URL + "/file/" + location.files[i].code)).text();
+              try {
+                const r = await fetch(process.env.REACT_APP_API_URL + "/file/" + location.files[i].code);
+                const ct = r.headers.get("content-type") || "";
+                if (!r.ok || ct.includes("application/json")) {
+                  location.files[i].content = "";
+                } else {
+                  location.files[i].content = await r.text();
+                }
+              } catch {
+                location.files[i].content = "";
+              }
             }
           }
           return files;
@@ -195,37 +245,44 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
 
         if(files && files.length !== 0) {
           let data = await loadFiles();
+          if (cancelled) return;
           for(let i = 0; i < langs.length; i++) {
             langs[i].template = data;
           }
         }
+        if (cancelled) return;
         setLanguages(langs);
 
         if(collabCode)
           return;
 
-        if(!useFileStorage && storageKey && storage.load(storageKey)) {
-          let saved = storage.load(storageKey);
-          setActive({...saved, lang: langs.find(l => l.lang === saved.lang.lang), output: [], input: "", loaded: true});
+        if(!useFileStorage && storageKey) {
+          let saved = null;
+          try { saved = storage.load(storageKey); } catch {}
+          if (saved) {
+            setActive({...saved, lang: langs.find(l => l.lang === saved?.lang?.lang) ?? langs[0], output: [], input: "", loaded: true});
+            return;
+          }
         }
-        else {
-          let lang = langs[0];
+        {
+          let selected = langs[0];
+          if (!selected?.template?.[0]) return;
           let open = [];
-          if(lang.template[0].files[0]) {
+          if(selected.template[0].files[0]) {
             open = [
-              {filename: lang.template[0].files[0].filename, folder: lang.template[0].folder}
+              {filename: selected.template[0].files[0].filename, folder: selected.template[0].folder}
             ];
           }
           let start = null;
 
-          if(lang.template[0].files[0])
-            start = clone(lang.template[0].files[0]);
+          if(selected.template[0].files[0])
+            start = clone(selected.template[0].files[0]);
 
           setActive({
-            files: clone(lang.template),
+            files: clone(selected.template),
             folder: "/",
             file: start,
-            lang: lang,
+            lang: selected,
             open,
             output: [],
             input: "",
@@ -235,10 +292,13 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
         }
       }
       else {
-        history.push("/home");
+        setErrorOptions({ body: json.response || "Unable to load languages." });
       }
+    }).catch(() => {
+      if (!cancelled) setErrorOptions({ body: "Network error loading languages." });
     });
-  }, [files, history, collabCode, lang, storageKey, useFileStorage]);
+    return () => { cancelled = true; };
+  }, [files, collabCode, lang, storageKey, useFileStorage, setErrorOptions]);
 
   React.useEffect(() => {
     function handleResize() {
@@ -295,7 +355,7 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
   };
 
   const check = () => {
-    if(room && section && isSignedIn) {
+    if(room && section && active?.lang?.lang) {
       setActive(prev => ({...prev, output: []}));
 
       sendMessage({
@@ -379,7 +439,7 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
 
   return (
     <>
-      <Col sm="12" className={size === "normal" ? "col-md-4 ide" : "col-md-6 ide"}>
+      <div className={size === "normal" ? "w-full lg:w-1/3 ide" : "w-full lg:w-1/2 ide"}>
         <div className="ide-top-files" ref={codeTopRef}>
           <IDEFiles active={active} setActive={setActive} size={size} />
         </div>
@@ -406,60 +466,47 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
             }}
           />
         ) : (
-          <div className="react-codemirror2 CodeMirror cm-s-material"></div>
+          <div className="react-codemirror2 CodeMirror cm-s-material" role="status" aria-label="Loading editor"></div>
         )}
         <div className="ide-bottom" ref={codeBottomRef}>
           {status === "disconnected" ? (
-            <Button size="sm" color="danger" onClick={connectWS} className="m-0">Reconnect</Button>
+            <button type="button" onClick={connectWS} className="inline-flex items-center gap-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-200 text-xs font-semibold px-3 py-1.5 transition-colors">Reconnect</button>
           ) : (
-            <div>
-              <Button disabled={status !== "connected"} id="ide-run" className="m-0" color="success" type="button" size="sm" onClick={run}><i className="fas fa-play"></i></Button>
-              <UncontrolledTooltip placement="top" target="ide-run">Run</UncontrolledTooltip>
+            <div className="flex items-center gap-2 flex-wrap">
+              <IdeButton id="ide-run" title="Run" onClick={run} disabled={status !== "connected"}><i className="fas fa-play" aria-hidden="true"></i></IdeButton>
 
-              <Button id="ide-reset" className="m-0 ml-2" color="info" type="button" size="sm" onClick={resetAlert}><i className="fas fa-sync-alt"></i></Button>
-              <UncontrolledTooltip placement="top" target="ide-reset">Reset</UncontrolledTooltip>
+              <IdeButton id="ide-reset" title="Reset" onClick={resetAlert}><i className="fas fa-sync-alt" aria-hidden="true"></i></IdeButton>
 
-              <Button id="ide-input" className="m-0 ml-2" color="warning" type="button" size="sm" onClick={stdinChange}><i className="fas fa-pencil-alt"></i></Button>
-              <UncontrolledTooltip placement="top" target="ide-input">Input</UncontrolledTooltip>
+              <IdeButton id="ide-input" title="Input" onClick={stdinChange}><i className="fas fa-pencil-alt" aria-hidden="true"></i></IdeButton>
 
               {(languages && languages.length > 1) && (
-                <>
-                  <Button id="ide-language" className="m-0 ml-2" color="default" type="button" size="sm" onClick={langChange}><i className="fas fa-code"></i></Button>
-                  <UncontrolledTooltip placement="top" target="ide-language">{active.lang ? active.lang.name : "Loading..."}</UncontrolledTooltip>
-                </>
+                <IdeButton id="ide-language" title={active.lang ? active.lang.name : "Loading..."} onClick={langChange}><i className="fas fa-code" aria-hidden="true"></i></IdeButton>
               )}
 
               {checks && (
-                <>
-                  <Button disabled={status !== "connected"} id="ide-check" className="m-0 ml-2 float-right" color="danger" type="button" size="sm" onClick={check}><i className="fas fa-check"></i></Button>
-                  <UncontrolledTooltip placement="top" target="ide-check">Check</UncontrolledTooltip>
-                </>
+                <IdeButton id="ide-check" title="Check" onClick={check} disabled={status !== "connected"}><i className="fas fa-check" aria-hidden="true"></i></IdeButton>
               )}
               {(useFileStorage && !collabCode && base) && (
-                <>
-                  <Button id="ide-save" className="m-0 ml-2 float-right" color="danger" type="button" size="sm" onClick={() => onSave(clone(active.files))}><i className="fas fa-save"></i></Button>
-                  <UncontrolledTooltip placement="top" target="ide-save">Save</UncontrolledTooltip>
-                </>
+                <IdeButton id="ide-save" title="Save" onClick={() => onSave(clone(active.files))}><i className="fas fa-save" aria-hidden="true"></i></IdeButton>
               )}
-              <Button id="ide-collab" disabled={collab} className="m-0 ml-2 float-right" color="primary" type="button" size="sm" onClick={collabStart}>{collab && <>{count} </>}<i className="fas fa-code-branch"></i></Button>
-              <UncontrolledTooltip placement="top" target="ide-collab">Collab</UncontrolledTooltip>
+              <IdeButton id="ide-collab" title="Collab" onClick={collabStart} disabled={collab}>{collab ? <>{count} </> : null}<i className="fas fa-code-branch" aria-hidden="true"></i></IdeButton>
             </div>
           )}
         </div>
-      </Col>
-      <Col sm="12" className={size === "normal" ? "col-md-4 room-output p-0" : "col-md-6 room-output p-0"}>
-        <div className="ide-top">
-          {active.lang && active.lang.name ? active.lang.name : "Loading..."}
-          {status === "connected" && <Badge color="success" className="m-0 mr-2 ide-badge float-right">Connected<i className="fas fa-check ml-2"></i></Badge>}
-          {status === "pending" && <Badge color="warning" className="m-0 mr-2 ide-badge float-right">Sending<Spinner size="sm" type="grow" className="ml-2 ide-grow" /></Badge>}
-          {status === "disconnected" && <Badge color="danger" className="m-0 mr-2 ide-badge float-right">Disconnected<i className="fas fa-times ml-2"></i></Badge>}
+      </div>
+      <div className={size === "normal" ? "w-full lg:w-2/3 room-output p-0" : "w-full lg:w-1/2 room-output p-0"}>
+        <div className="ide-top flex items-center justify-between gap-2">
+          <span>{active.lang && active.lang.name ? active.lang.name : "Loading..."}</span>
+          {status === "connected" && <span className="m-0 mr-2 ide-badge inline-flex items-center gap-2 rounded-full bg-emerald-500/20 text-emerald-200 text-xs font-semibold px-2.5 py-0.5">Connected<i className="fas fa-check" aria-hidden="true"></i></span>}
+          {status === "pending" && <span className="m-0 mr-2 ide-badge inline-flex items-center gap-2 rounded-full bg-amber-500/20 text-amber-200 text-xs font-semibold px-2.5 py-0.5">Sending<i className="fas fa-circle-notch animate-spin" aria-hidden="true"></i></span>}
+          {status === "disconnected" && <span className="m-0 mr-2 ide-badge inline-flex items-center gap-2 rounded-full bg-red-500/20 text-red-200 text-xs font-semibold px-2.5 py-0.5">Disconnected<i className="fas fa-times" aria-hidden="true"></i></span>}
         </div>
-        <div className="p-3 room-terminal">
+        <div className="p-3 room-terminal" aria-live="polite">
           {active.output && active.output.map((message, i) => (
             message.type === "stdout" ? <div key={i}>{message.content}</div> : <div key={i} className="room-output-error">{message.content}</div>
           ))}
         </div>
-      </Col>
+      </div>
     </>
   );
 }
