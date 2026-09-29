@@ -1,11 +1,11 @@
 import React from "react";
 import { useParams, useHistory } from "react-router-dom";
-import Cookies from 'universal-cookie';
+import Cookies from "universal-cookie";
 
-// reactstrap components
 import {
   Container,
   Row,
+  Col,
   Card,
   CardBody,
   CardTitle,
@@ -13,348 +13,552 @@ import {
   Spinner,
   FormGroup,
   Input,
-  Col,
   Button,
-  Form
+  Form,
+  Badge,
+  Nav,
+  NavItem,
+  NavLink,
 } from "reactstrap";
+
 import { useAuthState } from "context/auth.js";
 import { useAlertState } from "context/alert.js";
-
 import fetch from "utils/fetch.js";
 
-// core components
 import Navbar from "components/Navbars/Navbar.js";
-import ProfilePageHeader from "components/Headers/ProfilePageHeader.js";
 import DefaultFooter from "components/Footers/DefaultFooter.js";
 
 function ProfilePage() {
-  const { setMessageOptions, setErrorOptions, setFileListOptions } = useAlertState();
-  const { isSignedIn, user, email } = useAuthState();
+  const { setMessageOptions, setErrorOptions, setFileListOptions } =
+    useAlertState();
+  const { user: currentUsername, email: currentEmail } = useAuthState();
   const cookies = new Cookies();
   const history = useHistory();
-  let { target } = useParams();
+  const params = useParams();
 
-  if(!target) {
-    target = user;
-  }
+  const target = params.target || currentUsername;
+  const isOwner = target && currentUsername && target === currentUsername;
 
+  const [activeTab, setActiveTab] = React.useState("overview");
   const [userData, setUserData] = React.useState({});
   const [loaded, setLoaded] = React.useState(false);
 
-  const response = (json) => {
-    if(!json.success) {
-      return setErrorOptions({body: json.response, submit: () => {
-        history.push("/profile");
-        history.go(0);
-      }});
-    }
-    setMessageOptions({ body: json.response, submit: () => {
-      history.push("/profile");
-      history.go(0);
-    }});
-  };
+  const [info, setInfo] = React.useState({});
+  const [pass, setPass] = React.useState({ currentPassword: "", newPassword: "" });
+  const [bio, setBio] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+
+  const loadUserData = React.useCallback(() => {
+    if (!target) return;
+    setLoaded(false);
+    fetch(
+      process.env.REACT_APP_API_URL +
+        "/user/info?username=" +
+        encodeURIComponent(target),
+      {
+        method: "GET",
+      }
+    )
+      .then((resp) => resp.json())
+      .then((json) => {
+        setLoaded(true);
+        if (json.success) {
+          setUserData(json.response);
+          setBio(json.response.bio || "");
+          setInfo({
+            username: json.response.username,
+            name: json.response.name || "",
+            email: currentEmail || "",
+          });
+        } else {
+          setErrorOptions({
+            body: json.response || "User not found.",
+            submit: () => {
+              history.push("/home");
+            },
+          });
+        }
+      })
+      .catch(() => {
+        setLoaded(true);
+        setErrorOptions({
+          body: "Network error loading user profile.",
+          submit: () => {
+            history.push("/home");
+          },
+        });
+      });
+  }, [target, currentEmail, history, setErrorOptions]);
 
   React.useEffect(() => {
-    fetch(process.env.REACT_APP_API_URL + "/user/info?username=" + encodeURIComponent(target), {
-      method: "GET"
-    }).then(resp => resp.json()).then(json => {
-      if(json.success) {
-        setUserData(json.response);
-        setLoaded(true);
-      }
-      else {
-        setErrorOptions({body: json.response, submit: () => {
-          history.push("/home");
-        }});
-      }
-    });
-  }, [target, history, setErrorOptions]);
-
-  const [ info, setInfo ] = React.useState({});
-  const [ pass, setPass ] = React.useState({});
-  const [ bio, setBio ] = React.useState("");
+    window.scrollTo(0, 0);
+    loadUserData();
+  }, [loadUserData]);
 
   const updateInfo = (e) => {
     e.preventDefault();
+    setSaving(true);
 
-    fetch(process.env.REACT_APP_API_URL + '/user/update_info', {
-      method: 'POST',
+    fetch(process.env.REACT_APP_API_URL + "/user/update_info", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        username: info.username || user,
-        email: info.email || email,
-        name: info.name || userData.name
-      })
+        username: info.username || currentUsername,
+        email: info.email || currentEmail,
+        name: info.name !== undefined ? info.name : userData.name,
+      }),
     })
-    .then(resp => resp.json())
-    .then(json => {
-      if(!json.success) {
-        return setErrorOptions({body: json.response, submit: () => {
-          history.push("/profile");
-        }});
-      }
-      setMessageOptions({ body: "Update successful!", submit: () => {
-        history.push("/profile");
-      }});
-      cookies.set("authToken", json.response);
-    });
+      .then((resp) => resp.json())
+      .then((json) => {
+        setSaving(false);
+        if (!json.success) {
+          return setErrorOptions({ body: json.response });
+        }
+        cookies.set("authToken", json.response);
+        setMessageOptions({ body: "Profile updated successfully!" });
+        loadUserData();
+      })
+      .catch(() => {
+        setSaving(false);
+        setErrorOptions({ body: "Error updating user information." });
+      });
   };
 
   const changePass = (e) => {
     e.preventDefault();
-    fetch(process.env.REACT_APP_API_URL + '/user/update_pass', {
-      method: 'POST',
+    setSaving(true);
+    fetch(process.env.REACT_APP_API_URL + "/user/update_pass", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ ...pass })
+      body: JSON.stringify({ ...pass }),
     })
-    .then(resp => resp.json())
-    .then(response);
-  }
+      .then((resp) => resp.json())
+      .then((json) => {
+        setSaving(false);
+        if (json.success) {
+          setMessageOptions({ body: "Password changed successfully!" });
+          setPass({ currentPassword: "", newPassword: "" });
+        } else {
+          setErrorOptions({ body: json.response });
+        }
+      })
+      .catch(() => {
+        setSaving(false);
+        setErrorOptions({ body: "Failed to update password." });
+      });
+  };
 
   const changeBio = (e) => {
     e.preventDefault();
-    fetch(process.env.REACT_APP_API_URL + '/user/update_bio', {
-      method: 'POST',
+    setSaving(true);
+    fetch(process.env.REACT_APP_API_URL + "/user/update_bio", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ bio })
+      body: JSON.stringify({ bio }),
     })
-    .then(resp => resp.json())
-    .then(response);
-  }
+      .then((resp) => resp.json())
+      .then((json) => {
+        setSaving(false);
+        if (json.success) {
+          setMessageOptions({ body: "Bio updated successfully!" });
+          loadUserData();
+        } else {
+          setErrorOptions({ body: json.response });
+        }
+      })
+      .catch(() => {
+        setSaving(false);
+        setErrorOptions({ body: "Failed to update bio." });
+      });
+  };
 
   const changePic = (file) => {
-    fetch(process.env.REACT_APP_API_URL + '/user/update_pic', {
-      method: 'POST',
+    if (!file?.code) return;
+    fetch(process.env.REACT_APP_API_URL + "/user/update_pic", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({ code: file.code })
+      body: JSON.stringify({ code: file.code }),
     })
-    .then(resp => resp.json())
-    .then(response);
+      .then((resp) => resp.json())
+      .then((json) => {
+        if (json.success) {
+          setMessageOptions({ body: "Profile picture changed!" });
+          loadUserData();
+        } else {
+          setErrorOptions({ body: json.response });
+        }
+      });
   };
 
   const deletePic = () => {
-    fetch(process.env.REACT_APP_API_URL + '/user/update_pic', {
-      method: 'POST'
+    fetch(process.env.REACT_APP_API_URL + "/user/update_pic", {
+      method: "POST",
     })
-    .then(resp => resp.json())
-    .then(response);
+      .then((resp) => resp.json())
+      .then((json) => {
+        if (json.success) {
+          setMessageOptions({ body: "Profile picture removed!" });
+          loadUserData();
+        } else {
+          setErrorOptions({ body: json.response });
+        }
+      });
   };
-
-  React.useEffect(() => {
-    document.body.classList.add("profile-page");
-    document.body.classList.add("sidebar-collapse");
-    document.documentElement.classList.remove("nav-open");
-    window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
-
-    return function cleanup() {
-      document.body.classList.remove("profile-page");
-      document.body.classList.remove("sidebar-collapse");
-    };
-  }, []);
-
-  if(!isSignedIn) {
-    history.push("/");
-    return <></>;
-  }
 
   return (
     <>
       <Navbar />
-      <div className="wrapper">
-        <ProfilePageHeader />
-        <div className="section">
-          {loaded ? (
-            <Container>
-              <Row>
-                <Card>
-                  <CardBody>
-                    <img
-                      className="rounded-circle"
-                      src={userData.profilepic ?
-                        process.env.REACT_APP_API_URL + '/file/' + userData.profilepic
-                        : "https://ui-avatars.com/api/?name=" + userData.username
-                      }
-                      style={{"width": "8rem"}}
-                      onError={(e) => {
-                        if(target === user) {
-                          fetch(process.env.REACT_APP_API_URL + '/user/update_pic', {
-                            method: 'POST'
-                          });
+      <div
+        className="wrapper cs-page-wrapper"
+        style={{ minHeight: "100vh", backgroundColor: "#080c14", color: "#f8fafc" }}
+      >
+        <div style={{ height: "4.5rem" }} />
+
+        <Container className="py-5">
+          {!loaded ? (
+            <div className="text-center py-5">
+              <Spinner color="info" />
+              <div className="mt-3 text-muted">Loading profile...</div>
+            </div>
+          ) : (
+            <Row>
+              {/* Profile Card Left */}
+              <Col lg="4" md="5" className="mb-4">
+                <Card className="cs-card p-4 text-center">
+                  <CardBody className="p-0">
+                    <div className="position-relative d-inline-block mb-3">
+                      <img
+                        className="rounded-circle border border-info p-1 shadow"
+                        src={
+                          userData.profilepic
+                            ? process.env.REACT_APP_API_URL +
+                              "/file/" +
+                              userData.profilepic
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                                userData.username || "User"
+                              )}&background=141e33&color=38bdf8&size=160`
                         }
-                        e.target.src = "https://ui-avatars.com/api/?name=" + userData.username
-                      }}
-                      alt={userData.username + "'s profile picture"}
-                    ></img>
-                    <CardTitle tag="h4">{userData.name ? `${userData.name} (${userData.username})` : userData.username}'s Profile</CardTitle>
-                    <CardText style={{"whiteSpace": "pre-line"}}>
-                      {userData.bio ? userData.bio : "Sadly, we don't have any information about them."}
-                    </CardText>
-                    <hr />
-                    <div>
-                      <h5>Room Stats:</h5>
-                      <p>Completed: {userData.completed} / {userData.enrolled + userData.created}<br />
-                         Created: {userData.created}</p>
+                        style={{
+                          width: "7.5rem",
+                          height: "7.5rem",
+                          objectFit: "cover",
+                        }}
+                        onError={(e) => {
+                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                            userData.username || "User"
+                          )}&background=141e33&color=38bdf8&size=160`;
+                        }}
+                        alt={`${userData.username}'s avatar`}
+                      />
                     </div>
+
+                    <CardTitle tag="h4" className="font-weight-700 text-white mb-1">
+                      {userData.name ? userData.name : userData.username}
+                    </CardTitle>
+                    <div className="text-info font-mono small mb-3">
+                      @{userData.username}
+                    </div>
+
+                    <CardText
+                      className="text-muted small px-2 mb-4"
+                      style={{ whiteSpace: "pre-line" }}
+                    >
+                      {userData.bio ||
+                        "No bio written yet. A quiet developer building remarkable code."}
+                    </CardText>
+
+                    <div className="cs-panel p-3 text-left mb-3">
+                      <div className="d-flex justify-content-between py-1 border-bottom border-dark small">
+                        <span className="text-muted">Enrolled Rooms</span>
+                        <span className="font-weight-600 text-white">
+                          {userData.enrolled || 0}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between py-1 border-bottom border-dark small">
+                        <span className="text-muted">Created Rooms</span>
+                        <span className="font-weight-600 text-info">
+                          {userData.created || 0}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between py-1 small">
+                        <span className="text-muted">Completed</span>
+                        <span className="font-weight-600 text-success">
+                          {userData.completed || 0}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isOwner && (
+                      <div className="d-flex flex-column gap-2">
+                        <Button
+                          color="info"
+                          outline
+                          size="sm"
+                          className="cs-btn cs-btn-ghost mb-2"
+                          onClick={() =>
+                            setFileListOptions({
+                              title: "Select Profile Picture",
+                              submit: changePic,
+                            })
+                          }
+                        >
+                          <i className="fas fa-camera mr-1"></i> Upload Avatar
+                        </Button>
+                        {userData.profilepic && (
+                          <Button
+                            color="danger"
+                            outline
+                            size="sm"
+                            className="cs-btn cs-btn-ghost"
+                            onClick={deletePic}
+                          >
+                            <i className="fas fa-trash-alt mr-1"></i> Remove Avatar
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </CardBody>
                 </Card>
-              </Row>
+              </Col>
 
-              {target === user && (
-                <Row>
-                <Card>
-                  <CardBody>
-                    <CardTitle tag="h4">My Account</CardTitle>
+              {/* Profile Details / Settings Right */}
+              <Col lg="8" md="7">
+                {isOwner ? (
+                  <Card className="cs-card">
+                    <CardBody className="p-4">
+                      <Nav tabs className="cs-tabs mb-4">
+                        <NavItem>
+                          <NavLink
+                            className={`cs-tab-link ${
+                              activeTab === "overview" ? "active" : ""
+                            }`}
+                            onClick={() => setActiveTab("overview")}
+                          >
+                            <i className="fas fa-user-edit mr-1"></i> Account Details
+                          </NavLink>
+                        </NavItem>
+                        <NavItem>
+                          <NavLink
+                            className={`cs-tab-link ${
+                              activeTab === "security" ? "active" : ""
+                            }`}
+                            onClick={() => setActiveTab("security")}
+                          >
+                            <i className="fas fa-shield-alt mr-1"></i> Security
+                          </NavLink>
+                        </NavItem>
+                        <NavItem>
+                          <NavLink
+                            className={`cs-tab-link ${
+                              activeTab === "bio" ? "active" : ""
+                            }`}
+                            onClick={() => setActiveTab("bio")}
+                          >
+                            <i className="fas fa-pen-fancy mr-1"></i> Bio & Summary
+                          </NavLink>
+                        </NavItem>
+                      </Nav>
 
-                    <Form role="form" onSubmit={updateInfo}>
-                      <h6 className="heading-small text-muted mb-4">
-                        User information
-                      </h6>
-                      <Row>
-                        <Col lg="6">
+                      {activeTab === "overview" && (
+                        <Form onSubmit={updateInfo}>
+                          <h5 className="font-weight-600 text-white mb-3">
+                            Personal Information
+                          </h5>
+                          <Row>
+                            <Col md="6">
+                              <FormGroup>
+                                <label className="text-muted small">Username</label>
+                                <Input
+                                  type="text"
+                                  className="cs-input"
+                                  defaultValue={userData.username}
+                                  onChange={(e) =>
+                                    setInfo({ ...info, username: e.target.value })
+                                  }
+                                  required
+                                  minLength={6}
+                                />
+                              </FormGroup>
+                            </Col>
+                            <Col md="6">
+                              <FormGroup>
+                                <label className="text-muted small">Display Name</label>
+                                <Input
+                                  type="text"
+                                  className="cs-input"
+                                  defaultValue={userData.name}
+                                  onChange={(e) =>
+                                    setInfo({ ...info, name: e.target.value })
+                                  }
+                                  placeholder="e.g. Linus Torvalds"
+                                />
+                              </FormGroup>
+                            </Col>
+                          </Row>
                           <FormGroup>
-                            <label>Username</label>
+                            <label className="text-muted small">Email Address</label>
                             <Input
-                              placeholder="Username"
-                              type="text"
-                              defaultValue={userData.username}
-                              onChange={(e) => setInfo({...info, username: e.target.value })}
-                            ></Input>
-                          </FormGroup>
-                        </Col>
-                        <Col lg="6">
-                          <FormGroup>
-                            <label>Name</label>
-                            <Input
-                              placeholder="Name"
-                              type="text"
-                              defaultValue={userData.name}
-                              onChange={(e) => setInfo({...info, name: e.target.value })}
-                            ></Input>
-                          </FormGroup>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col>
-                          <FormGroup>
-                            <label>Email</label>
-                            <Input
-                              placeholder="Email"
                               type="email"
-                              defaultValue={email}
-                              onChange={(e) => setInfo({...info, email: e.target.value })}
-                            ></Input>
+                              className="cs-input"
+                              defaultValue={currentEmail}
+                              onChange={(e) =>
+                                setInfo({ ...info, email: e.target.value })
+                              }
+                              required
+                            />
                           </FormGroup>
-                        </Col>
-                      </Row>
-                      <Button
-                        color="primary"
-                        type="button"
-                        size="sm"
-                        onClick={() => setFileListOptions({title: "Select new profile picture:", submit: changePic})}
-                      >
-                        Change Profile Picture
-                      </Button>
-                      <Button
-                        color="danger"
-                        type="button"
-                        size="sm"
-                        onClick={deletePic}
-                      >
-                        Delete Profile Picture
-                      </Button>
-                      <Button
-                        color="info"
-                        type="submit"
-                        size="sm"
-                        className="float-right"
-                      >
-                       Update Info
-                      </Button>
-                    </Form>
-
-                    <Form role="form" onSubmit={changePass} className="mt-5">
-                      <h6 className="heading-small text-muted mb-4">
-                        Change Password
-                      </h6>
-                      <Row>
-                        <Col lg="6">
-                          <FormGroup>
-                            <label>Current Password</label>
-                            <Input
-                              placeholder="Current Password"
-                              type="password"
-                              onChange={(e) => setPass({...pass, currentPassword: e.target.value })}
-                            ></Input>
-                          </FormGroup>
-                        </Col>
-                        <Col lg="6">
-                          <FormGroup>
-                            <label>New Password</label>
-                            <Input
-                              placeholder="New Password"
-                              type="password"
-                              onChange={(e) => setPass({...pass, newPassword: e.target.value })}
-                            ></Input>
-                          </FormGroup>
-                        </Col>
-                      </Row>
-                      <Button
-                        color="info"
-                        type="submit"
-                        size="sm"
-                        className="float-right"
-                      >
-                       Update Password
-                      </Button>
-                    </Form>
-
-                    <Form role="form" onSubmit={changeBio} className="mt-5">
-                      <h6 className="heading-small text-muted mb-4">
-                        ABOUT ME
-                      </h6>
-                      <Row>
-                        <Col>
-                          <Input
-                            className="form-control-alternative"
-                            placeholder=""
-                            name="bio"
-                            defaultValue={userData.bio}
-                            onChange={(e) => setBio(e.target.value)}
-                            rows="4"
-                            type="textarea"
-                          />
                           <Button
                             color="info"
                             type="submit"
                             size="sm"
-                            className="float-right"
+                            className="cs-btn cs-btn-info mt-2"
+                            disabled={saving}
                           >
-                           Update Bio
+                            {saving ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <>
+                                <i className="fas fa-save mr-1"></i> Save Changes
+                              </>
+                            )}
                           </Button>
-                        </Col>
-                      </Row>
-                    </Form>
+                        </Form>
+                      )}
 
-                  </CardBody>
-                </Card>
-              </Row>
-              )}
-            </Container>
-          ) : (
-            <Container>
-              <Spinner />
-            </Container>
+                      {activeTab === "security" && (
+                        <Form onSubmit={changePass}>
+                          <h5 className="font-weight-600 text-white mb-3">
+                            Change Password
+                          </h5>
+                          <Row>
+                            <Col md="6">
+                              <FormGroup>
+                                <label className="text-muted small">
+                                  Current Password
+                                </label>
+                                <Input
+                                  type="password"
+                                  className="cs-input"
+                                  placeholder="Current Password"
+                                  value={pass.currentPassword}
+                                  onChange={(e) =>
+                                    setPass({
+                                      ...pass,
+                                      currentPassword: e.target.value,
+                                    })
+                                  }
+                                  required
+                                />
+                              </FormGroup>
+                            </Col>
+                            <Col md="6">
+                              <FormGroup>
+                                <label className="text-muted small">
+                                  New Password
+                                </label>
+                                <Input
+                                  type="password"
+                                  className="cs-input"
+                                  placeholder="At least 8 characters"
+                                  value={pass.newPassword}
+                                  onChange={(e) =>
+                                    setPass({
+                                      ...pass,
+                                      newPassword: e.target.value,
+                                    })
+                                  }
+                                  required
+                                  minLength={8}
+                                />
+                              </FormGroup>
+                            </Col>
+                          </Row>
+                          <Button
+                            color="info"
+                            type="submit"
+                            size="sm"
+                            className="cs-btn cs-btn-info mt-2"
+                            disabled={saving}
+                          >
+                            {saving ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <>
+                                <i className="fas fa-key mr-1"></i> Update Password
+                              </>
+                            )}
+                          </Button>
+                        </Form>
+                      )}
+
+                      {activeTab === "bio" && (
+                        <Form onSubmit={changeBio}>
+                          <h5 className="font-weight-600 text-white mb-3">
+                            About You
+                          </h5>
+                          <FormGroup>
+                            <label className="text-muted small">
+                              Tell the community about your coding journey
+                            </label>
+                            <Input
+                              type="textarea"
+                              className="cs-input"
+                              rows="5"
+                              value={bio}
+                              onChange={(e) => setBio(e.target.value)}
+                              placeholder="Write a brief intro..."
+                            />
+                          </FormGroup>
+                          <Button
+                            color="info"
+                            type="submit"
+                            size="sm"
+                            className="cs-btn cs-btn-info mt-2"
+                            disabled={saving}
+                          >
+                            {saving ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <>
+                                <i className="fas fa-check mr-1"></i> Save Bio
+                              </>
+                            )}
+                          </Button>
+                        </Form>
+                      )}
+                    </CardBody>
+                  </Card>
+                ) : (
+                  <Card className="cs-card p-4">
+                    <CardBody className="p-0">
+                      <h4 className="font-weight-700 text-white mb-3">
+                        About {userData.name || userData.username}
+                      </h4>
+                      <p className="text-muted" style={{ whiteSpace: "pre-line" }}>
+                        {userData.bio ||
+                          "This user has not written a biography yet."}
+                      </p>
+                      <hr className="border-dark" />
+                      <div className="d-flex align-items-center gap-3">
+                        <Badge color="info" className="px-2 py-1">
+                          Community Contributor
+                        </Badge>
+                      </div>
+                    </CardBody>
+                  </Card>
+                )}
+              </Col>
+            </Row>
           )}
-        </div>
+        </Container>
         <DefaultFooter />
       </div>
     </>

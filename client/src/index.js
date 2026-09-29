@@ -5,10 +5,13 @@ import { BrowserRouter, Route, Switch } from "react-router-dom";
 import { AuthProvider } from "context/auth.js";
 import { AlertProvider } from "context/alert.js";
 
+import ProtectedRoute from "components/Routes/ProtectedRoute.js";
+import PublicOnlyRoute from "components/Routes/PublicOnlyRoute.js";
+
 import "assets/css/bootstrap.min.css";
-import "assets/scss/styles.scss";
 import "assets/scss/now-ui-kit.scss";
 import "assets/demo/demo.css";
+import "assets/scss/styles.scss";
 
 import "../node_modules/highlight.js/styles/monokai-sublime.css";
 
@@ -23,6 +26,7 @@ import IDEPage from "views/IDEPage.js";
 import CreatePage from "views/rooms/CreatePage.js";
 import ViewPage from "views/rooms/ViewPage.js";
 import ListPage from "views/rooms/ListPage.js";
+import NotFoundPage from "views/NotFoundPage.js";
 
 const root = createRoot(document.getElementById("root"));
 
@@ -30,41 +34,23 @@ root.render(
   <AuthProvider>
     <BrowserRouter>
       <AlertProvider>
-          <Switch>
-            <Route
-              path="/login"
-              render={(props) => <LoginPage {...props} />}
-            />
-            <Route
-              path="/register"
-              render={(props) => <RegisterPage {...props} />}
-            />
-            <Route
-              path="/logout"
-              render={(props) => <LogoutPage {...props} />}
-            />
-            <Route path="/home" render={(props) => <HomePage {...props} />} />
-            <Route path="/profile/:target?" render={(props) => <ProfilePage {...props} />} />
-            <Route path="/ide" render={(props) => <IDEPage {...props} />} />
-            <Route
-              path="/rooms/create"
-              render={(props) => <CreatePage {...props} />}
-            />
-            <Route
-              path="/rooms/edit/:code"
-              render={(props) => <CreatePage {...props} />}
-            />
-            <Route
-              path="/rooms/view/:code"
-              render={(props) => <ViewPage {...props} />}
-            />
-            <Route
-              path="/rooms/list"
-              render={(props) => <ListPage {...props} />}
-            />
-            <Route path="/" render={(props) => <Index {...props} />} />
-          </Switch>
+        <Switch>
+          <Route exact path="/" component={Index} />
+          <PublicOnlyRoute exact path="/login" component={LoginPage} />
+          <PublicOnlyRoute exact path="/register" component={RegisterPage} />
+          <Route exact path="/logout" component={LogoutPage} />
+          
+          <ProtectedRoute exact path="/home" component={HomePage} />
+          <ProtectedRoute exact path="/profile/:target?" component={ProfilePage} />
+          <ProtectedRoute exact path="/ide" component={IDEPage} />
+          <ProtectedRoute exact path="/rooms/list" component={ListPage} />
+          <ProtectedRoute exact path="/rooms/create" component={CreatePage} />
+          <ProtectedRoute exact path="/rooms/edit/:code" component={CreatePage} />
+          <ProtectedRoute exact path="/rooms/view/:code" component={ViewPage} />
+          
+          <Route component={NotFoundPage} />
+        </Switch>
       </AlertProvider>
     </BrowserRouter>
-  </AuthProvider>,
+  </AuthProvider>
 );

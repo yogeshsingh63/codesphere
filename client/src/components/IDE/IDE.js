@@ -245,20 +245,30 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
       if(navbarRef.current && codeBottomRef.current && codeTopRef.current) {
         let height = window.innerHeight;
 
-        height -= navbarRef.current.parentElement.parentElement.offsetHeight;
+        const navParent = navbarRef.current.parentElement?.parentElement;
+        if (navParent) {
+          height -= navParent.offsetHeight;
+        }
         height -= codeBottomRef.current.offsetHeight;
         height -= codeTopRef.current.offsetHeight;
 
-        let prevHeight = document.getElementsByClassName("react-codemirror2")[0].style.height;
-        if(Math.abs(height - parseInt(prevHeight)) < 10) {
+        const cmContainer = document.getElementsByClassName("react-codemirror2")[0];
+        if (!cmContainer) {
+          return;
+        }
+
+        let prevHeight = cmContainer.style.height;
+        if(prevHeight && Math.abs(height - parseInt(prevHeight, 10)) < 10) {
           // skip resizing unless large height difference
           return;
         }
 
-        height += "px";
-
-        document.getElementsByClassName("react-codemirror2")[0].style.height = height;
-        document.getElementsByClassName("CodeMirror cm-s-material")[0].style.height = height;
+        const heightPx = Math.max(height, 200) + "px";
+        cmContainer.style.height = heightPx;
+        const cmInstance = document.getElementsByClassName("CodeMirror")[0];
+        if (cmInstance) {
+          cmInstance.style.height = heightPx;
+        }
       }
     }
     window.addEventListener("resize", handleResize);
@@ -370,10 +380,10 @@ function IDE({navbarRef, checks, storageKey = null, useFileStorage = false, room
   }
 
   const collabStart = () => {
-    ws.send(JSON.stringify({
+    sendMessage({
       type: "collab",
       meta: "create"
-    }));
+    });
     setCollab(true);
   }
 

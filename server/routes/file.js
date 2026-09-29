@@ -247,6 +247,9 @@ router.get(
         file.filename
       )}"`,
       "Content-Type": file.mimetype,
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; sandbox",
+      "X-Content-Type-Options": "nosniff",
+      "Cache-Control": "public, max-age=86400",
     });
     return res.end(file.data);
   })

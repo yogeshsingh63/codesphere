@@ -1,151 +1,132 @@
 import React from "react";
-import Cookies from 'universal-cookie';
-
-//import { useHistory } from "react-router-dom";
-
-// reactstrap components
+import { Link, useHistory } from "react-router-dom";
 import {
   Button,
   Card,
-  CardHeader,
   CardBody,
-  CardFooter,
-  CardTitle,
   Form,
+  FormGroup,
   Input,
-  InputGroupAddon,
-  InputGroupText,
-  InputGroup,
-  Container,
-  Row,
-  Alert
+  Alert,
+  Spinner,
 } from "reactstrap";
 
-// core components
-
+import { useAuthState } from "context/auth.js";
 import fetch from "utils/fetch.js";
 
-function SignUp() {
-  const cookies = new Cookies();
-  //const history = useHistory();
-
-  const [userFocus, setUserFocus] = React.useState(false);
-  const [passFocus, setPassFocus] = React.useState(false);
-
-  const [error, setError] = React.useState("");
-  const [disabled, setDisabled] = React.useState(false);
+function Login() {
+  const { loginSuccess } = useAuthState();
+  const history = useHistory();
 
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
 
   const submitForm = (e) => {
     e.preventDefault();
+    setError("");
+    setLoading(true);
 
-    setDisabled(true);
-
-    fetch(process.env.REACT_APP_API_URL + '/user/login', {
-      method: 'POST',
+    fetch(process.env.REACT_APP_API_URL + "/user/login", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json'
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({username, password})
+      body: JSON.stringify({ username, password }),
     })
-    .then(resp => resp.json())
-    .then(json => {
-      setDisabled(false);
-
-      if(json.success) {
-        cookies.set("authToken", json.response);
-        //history.push("/home");
-        window.location = "/home";
-      }
-      else {
-        setError(json.response);
-      }
-    })
-    .catch(err => {
-      setDisabled(false);
-      setError("Network error. Please try again.");
-    });
-  }
+      .then((resp) => resp.json())
+      .then((json) => {
+        setLoading(false);
+        if (json.success) {
+          loginSuccess(json.response, username, "");
+          history.push("/home");
+        } else {
+          setError(json.response || "Invalid username or password.");
+        }
+      })
+      .catch(() => {
+        setLoading(false);
+        setError("Network error. Please check your server connection.");
+      });
+  };
 
   return (
-    <>
-        <Container>
-          <Row>
-            <Card className="card-signup" data-background-color="blue">
-              <Form className="form" onSubmit={submitForm}>
-                <CardHeader className="text-center">
-                  <CardTitle className="title-up" tag="h3">
-                    Log In
-                  </CardTitle>
-                  {error &&
-                    (<Alert color="danger">
-                      {error}
-                    </Alert>)
-                  }
-                </CardHeader>
-                <CardBody>
-                  <InputGroup
-                    className={
-                      "no-border" + (userFocus ? " input-group-focus" : "")
-                    }
-                  >
-                    <InputGroupAddon addonType="prepend">
-                      <InputGroupText>
-                        <i className="fas fa-user"></i>
-                      </InputGroupText>
-                    </InputGroupAddon>
-                    <Input
-                      placeholder="Username"
-                      type="text"
-                      value={username}
-                      onChange={e => setUsername(e.target.value)}
-                      onFocus={() => setUserFocus(true)}
-                      onBlur={() => setUserFocus(false)}
-                      required
-                      minLength={6}
-                    ></Input>
-                  </InputGroup>
-                  <InputGroup
-                    className={
-                      "no-border" + (passFocus ? " input-group-focus" : "")
-                    }
-                  >
-                    <InputGroupAddon addonType="prepend">
-                      <InputGroupText>
-                        <i className="fas fa-key"></i>
-                      </InputGroupText>
-                    </InputGroupAddon>
-                    <Input
-                      placeholder="Password"
-                      type="password"
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      onFocus={() => setPassFocus(true)}
-                      onBlur={() => setPassFocus(false)}
-                      required
-                      minLength={8}
-                    ></Input>
-                  </InputGroup>
-                </CardBody>
-                <CardFooter className="text-center pt-0">
-                  <Button
-                    className="btn-neutral btn-round"
-                    color="info"
-                    type="submit"
-                    size="lg"
-                    disabled={disabled}
-                  >
-                    Log In
-                  </Button>
-                </CardFooter>
-              </Form>
-            </Card>
-          </Row>
-        </Container>
-    </>
+    <Card className="cs-card p-4">
+      <CardBody className="p-0">
+        <div className="text-center mb-4">
+          <div className="cs-auth-icon-circle mx-auto mb-3">
+            <i className="fas fa-terminal text-info fa-lg"></i>
+          </div>
+          <h3 className="font-weight-700 text-white mb-1">Sign In</h3>
+          <p className="text-muted small mb-0">
+            Access your CodeSphere workspace and rooms
+          </p>
+        </div>
+
+        {error && (
+          <Alert color="danger" className="cs-alert-danger small py-2 mb-3">
+            <i className="fas fa-exclamation-circle mr-2"></i>
+            {error}
+          </Alert>
+        )}
+
+        <Form onSubmit={submitForm}>
+          <FormGroup className="mb-3">
+            <label className="cs-label">Username</label>
+            <Input
+              type="text"
+              placeholder="Enter your username"
+              className="cs-input"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              minLength={6}
+              autoComplete="username"
+            />
+          </FormGroup>
+
+          <FormGroup className="mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-1">
+              <label className="cs-label mb-0">Password</label>
+            </div>
+            <Input
+              type="password"
+              placeholder="••••••••"
+              className="cs-input"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={8}
+              autoComplete="current-password"
+            />
+          </FormGroup>
+
+          <Button
+            color="info"
+            type="submit"
+            className="cs-btn cs-btn-info w-100 py-2 font-weight-600"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Spinner size="sm" className="mr-2" /> Signing in...
+              </>
+            ) : (
+              "Sign In to CodeSphere"
+            )}
+          </Button>
+
+          <div className="text-center mt-4 pt-2 border-top border-dark">
+            <span className="text-muted small">Don't have an account? </span>
+            <Link to="/register" className="text-info font-weight-600 small">
+              Create an account &rarr;
+            </Link>
+          </div>
+        </Form>
+      </CardBody>
+    </Card>
   );
 }
 
-export default SignUp;
+export default Login;

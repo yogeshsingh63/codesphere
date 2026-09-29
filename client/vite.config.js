@@ -33,6 +33,25 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       outDir: "build",
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            "vendor-react": [
+              "react",
+              "react-dom",
+              "react-router",
+              "react-router-dom",
+            ],
+            "vendor-codemirror": ["codemirror", "react-codemirror2"],
+            "vendor-markdown": [
+              "markdown-it",
+              "markdown-it-container",
+              "highlight.js",
+              "dompurify",
+            ],
+          },
+        },
+      },
     },
     optimizeDeps: {
       esbuildOptions: {

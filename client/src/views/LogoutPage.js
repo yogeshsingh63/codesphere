@@ -1,18 +1,15 @@
 import React from "react";
-import Cookies from 'universal-cookie';
-
-import { useHistory } from "react-router-dom";
+import { Redirect } from "react-router-dom";
+import { useAuthState } from "context/auth.js";
 
 function LogoutPage() {
-  const history = useHistory();
+  const { signOut } = useAuthState();
 
   React.useEffect(() => {
-    const cookies = new Cookies();
-    cookies.remove("authToken");
-    history.push("/");
-  }, [history]);
+    signOut();
+  }, [signOut]);
 
-  return <></>;
+  return <Redirect to="/login" />;
 }
 
 export default LogoutPage;

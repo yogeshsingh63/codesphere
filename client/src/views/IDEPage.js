@@ -76,11 +76,6 @@ function IDEPage() {
     }
   }
 
-  if(!isSignedIn) {
-    history.push("/");
-    return <></>;
-  }
-  
   return (
     <div className="room-wrapper">
       <Navbar transparent={false} fixed={false} className="mb-0" innerRef={navbarRef} />

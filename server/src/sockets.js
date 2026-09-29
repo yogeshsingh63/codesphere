@@ -14,12 +14,17 @@ const RUN_LIMIT_PER_WINDOW = Number.parseInt(
 );
 
 function safeSend(ws, data) {
-  if (ws.readyState !== WebSocket.OPEN) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
     return false;
   }
 
-  ws.send(JSON.stringify(data));
-  return true;
+  try {
+    ws.send(JSON.stringify(data));
+    return true;
+  } catch (error) {
+    console.error("[WS SEND ERROR]", error);
+    return false;
+  }
 }
 
 const configure = (wss) => {

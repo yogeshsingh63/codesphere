@@ -1,59 +1,34 @@
 import React from "react";
-import asset from "utils/asset.js";
-import { useHistory } from "react-router-dom";
-// reactstrap components
-import {
-  Container,
-  Col
-} from "reactstrap";
-
-// core components
+import { Container, Row, Col } from "reactstrap";
 import Navbar from "components/Navbars/Navbar.js";
-import TransparentFooter from "components/Footers/TransparentFooter.js";
-
+import DefaultFooter from "components/Footers/DefaultFooter.js";
 import SignUp from "components/Form/SignUp.js";
 
-import { useAuthState } from "context/auth.js";
-
 function RegisterPage() {
-  const { isSignedIn } = useAuthState();
-  const history = useHistory();
-
   React.useEffect(() => {
-    document.body.classList.add("login-page");
-    document.body.classList.add("sidebar-collapse");
-    document.documentElement.classList.remove("nav-open");
     window.scrollTo(0, 0);
-    document.body.scrollTop = 0;
-    return function cleanup() {
-      document.body.classList.remove("login-page");
-      document.body.classList.remove("sidebar-collapse");
-    };
   }, []);
 
-  if(isSignedIn) {
-    history.push("/home");
-    return <></>;
-  }
-  
   return (
     <>
       <Navbar />
-      <div className="page-header clear-filter" filter-color="blue">
-        <div
-          className="page-header-image"
-          style={{
-            backgroundImage: "url(" + asset("assets/img/login.jpg") + ")",
-          }}
-        ></div>
-        <div className="content">
-          <Container>
-            <Col className="ml-auto mr-auto mb-5" md="4">
+      <div
+        className="wrapper d-flex flex-column justify-content-between"
+        style={{
+          minHeight: "100vh",
+          backgroundColor: "#080c14",
+          color: "#f8fafc",
+        }}
+      >
+        <div style={{ height: "4.5rem" }} />
+        <Container className="my-auto py-5">
+          <Row className="justify-content-center">
+            <Col lg="5" md="7" sm="10">
               <SignUp />
             </Col>
-          </Container>
-        </div>
-        <TransparentFooter />
+          </Row>
+        </Container>
+        <DefaultFooter />
       </div>
     </>
   );

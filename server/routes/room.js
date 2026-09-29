@@ -526,7 +526,7 @@ router.get(
       code: room.code,
       title: room.title,
       desc: room.desc,
-      author: room.author.username,
+      author: room.author?.username || "Community",
     }));
 
     if (!hasPagination && !search) {

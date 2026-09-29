@@ -1,113 +1,125 @@
 import React from "react";
-// reactstrap components
 import {
   Collapse,
   NavbarBrand,
   Navbar,
   NavItem,
-  Nav,
   NavLink,
-  Container
+  Nav,
+  Container,
+  Button,
 } from "reactstrap";
+import { Link, NavLink as RRNavLink } from "react-router-dom";
+import { useAuthState } from "context/auth.js";
 
-import { NavLink as RRNavLink } from 'react-router-dom';
-
-function AuthNavbar({ transparent = true, fixed = true, innerRef, className }) {
-  const [navbarColor, setNavbarColor] = React.useState(transparent ? "navbar-transparent": "");
+function AuthNavbar({ fixed = true, innerRef, className = "" }) {
+  const { user } = useAuthState();
+  const [scrolled, setScrolled] = React.useState(false);
   const [collapseOpen, setCollapseOpen] = React.useState(false);
+
   React.useEffect(() => {
-    const updateNavbarColor = () => {
-      if(!transparent) {
-        setNavbarColor("");
-      }
-      else {
-        if ((document.documentElement.scrollTop > 399 || document.body.scrollTop > 399)) {
-          setNavbarColor("");
-        } else if (
-          document.documentElement.scrollTop < 400 ||
-          document.body.scrollTop < 400
-        ) {
-          setNavbarColor("navbar-transparent");
-        }
-      }
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 40);
     };
-    window.addEventListener("scroll", updateNavbarColor);
-    return function cleanup() {
-      window.removeEventListener("scroll", updateNavbarColor);
-    };
-  });
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <>
-      {collapseOpen ? (
-        <div
-          id="bodyClick"
-          onClick={() => {
-            document.documentElement.classList.toggle("nav-open");
-            setCollapseOpen(false);
-          }}
-        />
-      ) : null}
-      <Navbar className={(fixed ? "fixed-top " : "") + navbarColor + " " + className} color="info" expand="lg">
-        <Container>
-          <div ref={innerRef} className="navbar-translate">
-            <NavbarBrand tag={RRNavLink} to="/" id="navbar-brand">
-            CodeSphere
-            </NavbarBrand>
-            <button
-              className="navbar-toggler navbar-toggler"
-              onClick={() => {
-                document.documentElement.classList.toggle("nav-open");
-                setCollapseOpen(!collapseOpen);
-              }}
-              aria-expanded={collapseOpen}
-              type="button"
-            >
-              <span className="navbar-toggler-bar top-bar"></span>
-              <span className="navbar-toggler-bar middle-bar"></span>
-              <span className="navbar-toggler-bar bottom-bar"></span>
-            </button>
-          </div>
-          <Collapse
-            className="justify-content-end"
-            isOpen={collapseOpen}
-            navbar
+    <Navbar
+      className={`cs-navbar cs-auth-navbar ${fixed ? "fixed-top" : ""} ${
+        scrolled ? "cs-navbar-scrolled" : ""
+      } ${className}`}
+      expand="lg"
+      innerRef={innerRef}
+    >
+      <Container>
+        <div className="navbar-translate d-flex justify-content-between align-items-center w-100-mobile">
+          <NavbarBrand
+            tag={Link}
+            to="/home"
+            className="cs-navbar-brand d-flex align-items-center gap-2"
           >
-            <Nav navbar>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/home">
-                  <i className="fas fa-home mr-1"></i>
-                  Home
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/profile">
-                  <i className="fas fa-user mr-1"></i>
-                  Profile
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/rooms/list">
-                  <i className="fas fa-list mr-1"></i>
-                  Rooms
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/ide">
-                  <i className="fas fa-code mr-1"></i>
-                  IDE
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/logout">
-                  <i className="fas fa-sign-out-alt mr-1"></i>
-                  Logout
-                </NavLink>
-              </NavItem>
-            </Nav>
-          </Collapse>
-        </Container>
-      </Navbar>
-    </>
+            <div className="cs-brand-icon">
+              <i className="fas fa-terminal"></i>
+            </div>
+            <span className="cs-brand-name">CodeSphere</span>
+            <span className="cs-brand-pill">v2.0</span>
+          </NavbarBrand>
+
+          <button
+            className={`navbar-toggler cs-toggler d-lg-none ${
+              collapseOpen ? "toggled" : ""
+            }`}
+            onClick={() => setCollapseOpen(!collapseOpen)}
+            type="button"
+            aria-label="Toggle navigation"
+          >
+            <i className={collapseOpen ? "fas fa-times" : "fas fa-bars"}></i>
+          </button>
+        </div>
+
+        <Collapse isOpen={collapseOpen} navbar className="justify-content-end">
+          <Nav navbar className="align-items-lg-center gap-lg-1">
+            <NavItem>
+              <NavLink
+                tag={RRNavLink}
+                exact
+                activeClassName="cs-nav-active"
+                to="/home"
+                className="cs-nav-link"
+              >
+                <i className="fas fa-home mr-1"></i> Dashboard
+              </NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink
+                tag={RRNavLink}
+                activeClassName="cs-nav-active"
+                to="/rooms/list"
+                className="cs-nav-link"
+              >
+                <i className="fas fa-compass mr-1"></i> Explore
+              </NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink
+                tag={RRNavLink}
+                exact
+                activeClassName="cs-nav-active"
+                to="/ide"
+                className="cs-nav-link"
+              >
+                <i className="fas fa-code mr-1"></i> Cloud IDE
+              </NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink
+                tag={RRNavLink}
+                activeClassName="cs-nav-active"
+                to="/profile"
+                className="cs-nav-link"
+              >
+                <i className="fas fa-user-circle mr-1"></i> Profile
+              </NavLink>
+            </NavItem>
+            <NavItem className="ml-lg-2">
+              <Button
+                tag={Link}
+                to="/logout"
+                size="sm"
+                color="secondary"
+                outline
+                className="cs-btn cs-btn-ghost text-muted py-1 px-3"
+              >
+                <i className="fas fa-sign-out-alt mr-1"></i> Sign Out
+              </Button>
+            </NavItem>
+          </Nav>
+        </Collapse>
+      </Container>
+    </Navbar>
   );
 }
 

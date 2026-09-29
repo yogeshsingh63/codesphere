@@ -1,5 +1,4 @@
 import React from "react";
-// reactstrap components
 import {
   Collapse,
   NavbarBrand,
@@ -8,88 +7,85 @@ import {
   NavLink,
   Nav,
   Container,
+  Button,
 } from "reactstrap";
+import { Link, NavLink as RRNavLink } from "react-router-dom";
+import asset from "utils/asset.js";
 
-import { NavLink as RRNavLink } from 'react-router-dom';
-
-function IndexNavbar({ transparent = true, fixed = true, innerRef, className }) {
-  const [navbarColor, setNavbarColor] = React.useState(transparent ? "navbar-transparent": "");
+function IndexNavbar({ fixed = true, innerRef, className = "" }) {
+  const [scrolled, setScrolled] = React.useState(false);
   const [collapseOpen, setCollapseOpen] = React.useState(false);
+
   React.useEffect(() => {
-    const updateNavbarColor = () => {
-      if(!transparent) {
-        setNavbarColor("");
-      }
-      else {
-        if ((document.documentElement.scrollTop > 399 || document.body.scrollTop > 399)) {
-          setNavbarColor("");
-        } else if (
-          document.documentElement.scrollTop < 400 ||
-          document.body.scrollTop < 400
-        ) {
-          setNavbarColor("navbar-transparent");
-        }
-      }
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 40);
     };
-    window.addEventListener("scroll", updateNavbarColor);
-    return function cleanup() {
-      window.removeEventListener("scroll", updateNavbarColor);
-    };
-  });
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <>
-      {collapseOpen ? (
-        <div
-          id="bodyClick"
-          onClick={() => {
-            document.documentElement.classList.toggle("nav-open");
-            setCollapseOpen(false);
-          }}
-        />
-      ) : null}
-      <Navbar className={(fixed ? "fixed-top " : "") + navbarColor + " " + className} expand="lg" color="info">
-        <Container>
-          <div ref={innerRef} className="navbar-translate">
-            <NavbarBrand tag={RRNavLink} to="/" id="navbar-brand">
-            CodeSphere
-            </NavbarBrand>
-            <button
-              className="navbar-toggler navbar-toggler"
-              onClick={() => {
-                document.documentElement.classList.toggle("nav-open");
-                setCollapseOpen(!collapseOpen);
-              }}
-              aria-expanded={collapseOpen}
-              type="button"
-            >
-              <span className="navbar-toggler-bar top-bar"></span>
-              <span className="navbar-toggler-bar middle-bar"></span>
-              <span className="navbar-toggler-bar bottom-bar"></span>
-            </button>
-          </div>
-          <Collapse
-            className="justify-content-end"
-            isOpen={collapseOpen}
-            navbar
+    <Navbar
+      className={`cs-navbar ${fixed ? "fixed-top" : ""} ${
+        scrolled ? "cs-navbar-scrolled" : ""
+      } ${className}`}
+      expand="lg"
+      innerRef={innerRef}
+    >
+      <Container>
+        <div className="navbar-translate d-flex justify-content-between align-items-center w-100-mobile">
+          <NavbarBrand
+            tag={Link}
+            to="/"
+            className="cs-navbar-brand d-flex align-items-center gap-2"
           >
-            <Nav navbar>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/register">
-                  <i className="fas fa-user mr-1"></i>
-                  <span>Register</span>
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                <NavLink tag={RRNavLink} exact activeClassName="active" to="/login">
-                  <i className="fas fa-sign-in-alt  mr-1"></i>
-                  <span>Login</span>
-                </NavLink>
-              </NavItem>
-            </Nav>
-          </Collapse>
-        </Container>
-      </Navbar>
-    </>
+            <div className="cs-brand-icon">
+              <i className="fas fa-terminal"></i>
+            </div>
+            <span className="cs-brand-name">CodeSphere</span>
+            <span className="cs-brand-pill">v2.0</span>
+          </NavbarBrand>
+
+          <button
+            className={`navbar-toggler cs-toggler d-lg-none ${
+              collapseOpen ? "toggled" : ""
+            }`}
+            onClick={() => setCollapseOpen(!collapseOpen)}
+            type="button"
+            aria-label="Toggle navigation"
+          >
+            <i className={collapseOpen ? "fas fa-times" : "fas fa-bars"}></i>
+          </button>
+        </div>
+
+        <Collapse isOpen={collapseOpen} navbar className="justify-content-end">
+          <Nav navbar className="align-items-lg-center gap-lg-2">
+            <NavItem>
+              <NavLink tag={Link} to="/rooms/list" className="cs-nav-link">
+                <i className="fas fa-compass mr-1"></i> Explore
+              </NavLink>
+            </NavItem>
+            <NavItem>
+              <NavLink tag={Link} to="/login" className="cs-nav-link">
+                Sign In
+              </NavLink>
+            </NavItem>
+            <NavItem>
+              <Button
+                tag={Link}
+                to="/register"
+                size="sm"
+                color="info"
+                className="cs-btn cs-btn-info ml-lg-2"
+              >
+                Get Started Free &rarr;
+              </Button>
+            </NavItem>
+          </Nav>
+        </Collapse>
+      </Container>
+    </Navbar>
   );
 }
 

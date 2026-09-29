@@ -202,11 +202,6 @@ function CreatePage() {
     sectionsRef.current = sections;
   }, [sections]);
 
-  if(!isSignedIn) {
-    history.push("/");
-    return <></>;
-  }
-
   return (
     <>
       <AuthNavbar />
